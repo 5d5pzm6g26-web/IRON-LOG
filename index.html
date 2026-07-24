@@ -868,12 +868,13 @@
                             ex.sets.forEach((set, setIdx) => {          
                                 const isActive = (UIManager.state.activeExIndex === exIdx && UIManager.state.activeSetIndex === setIdx && !document.getElementById('numpad-container').classList.contains('hidden'));          
                                 const borderClass = isActive ? 'border-brand-500 bg-brand-500/10' : 'border-slate-700/80 bg-slate-900/60';          
-                                const completedCheck = set.completed ? '<i class="fa-solid fa-check text-emerald-400"></i>' : '<span class="text-slate-500">'+(setIdx+1)+'</span>';          
+                                const isCompleted = set.completed === true;          
+                                const completeBtnClass = isCompleted ? 'text-emerald-400 bg-emerald-500/20 border-emerald-500/40' : 'text-slate-500 hover:text-slate-300 bg-slate-800 border-slate-700/80';          
           
                                 setsHtml += `          
                                     <div class="grid grid-cols-12 gap-1.5 items-center p-2 rounded-xl border ${borderClass} text-xs transition">          
                                         <div class="col-span-2 flex items-center justify-center font-mono font-bold">          
-                                            <div class="w-6 h-6 flex items-center justify-center rounded-lg bg-slate-800 text-[11px]">${completedCheck}</div>          
+                                            <div class="w-6 h-6 flex items-center justify-center rounded-lg bg-slate-800 text-[11px] text-slate-300">${setIdx + 1}</div>          
                                         </div>          
                                         <div class="col-span-4">          
                                             <button onclick="UIManager.openNumpad(${exIdx}, ${setIdx}, 'weight')" class="w-full px-2 py-2 rounded-lg bg-slate-800/90 text-slate-100 hover:bg-slate-700 border border-slate-700/60 shadow-sm font-mono font-bold text-center">${set.weight} <span class="text-[10px] text-slate-400">kg</span></button>          
@@ -882,7 +883,7 @@
                                             <button onclick="UIManager.openNumpad(${exIdx}, ${setIdx}, 'reps')" class="w-full px-2 py-2 rounded-lg bg-slate-800/90 text-slate-100 hover:bg-slate-700 border border-slate-700/60 shadow-sm font-mono font-bold text-center">${set.reps} <span class="text-[10px] text-slate-400">回</span></button>          
                                         </div>          
                                         <div class="col-span-3 flex items-center justify-center gap-1">          
-                                            <button onclick="WorkoutManager.toggleSetComplete(${exIdx}, ${setIdx})" class="p-2.5 text-slate-400 hover:text-emerald-400"><i class="fa-solid fa-circle-check text-lg"></i></button>          
+                                            <button onclick="WorkoutManager.toggleSetComplete(${exIdx}, ${setIdx})" class="w-8 h-8 rounded-lg border flex items-center justify-center transition ${completeBtnClass}"><i class="fa-solid fa-check text-sm"></i></button>          
                                             <button onclick="WorkoutManager.removeSet(${exIdx}, ${setIdx})" class="p-1.5 text-slate-400 hover:text-rose-400"><i class="fa-solid fa-trash-can text-xs"></i></button>          
                                         </div>          
                                     </div>          
@@ -997,7 +998,6 @@
                 this.renderWorkoutView();          
             },          
             completeCurrentSet() {          
-                // テンキーの完了ボタンではセットのチェック状態を自動変更せず、数値入力を確定してテンキーを閉じるのみにする          
                 UIManager.hideNumpad();          
                 this.renderWorkoutView();          
             },          
@@ -1701,27 +1701,23 @@
                 }          
           
                 this.updateNumpadDisplay();          
-                this.syncNumpadToSetData();          
+                this.syncNumpadValues();          
             },          
             updateNumpadDisplay() {          
                 document.getElementById('val-weight').textContent = this.state.inputWeight;          
                 document.getElementById('val-reps').textContent = this.state.inputReps;          
             },          
-            syncNumpadToSetData() {          
-                const activeDate = this.state.selectedDate;          
-                const dayLogs = WorkoutManager.getLogsForDate(activeDate);          
-                const ex = dayLogs[this.state.activeExIndex];          
-                if (!ex || !ex.sets || !ex.sets[this.state.activeSetIndex]) return;          
-          
-                const set = ex.sets[this.state.activeSetIndex];          
-                if (this.state.inputMode === 'weight') {          
+            syncNumpadValues() {          
+                const dayLogs = WorkoutManager.getLogsForDate(this.state.selectedDate);          
+                const set = dayLogs[this.state.activeExIndex].sets[this.state.activeSetIndex];          
+                if (set) {          
                     set.weight = this.state.inputWeight;          
-                    set.manualWeight = true;          
-                } else {          
                     set.reps = this.state.inputReps;          
+                    if (this.state.inputMode === 'weight') {          
+                        set.manualWeight = true;          
+                    }          
+                    WorkoutManager.saveLogsForDate(this.state.selectedDate, dayLogs);          
                 }          
-                WorkoutManager.saveLogsForDate(activeDate, dayLogs);          
-                WorkoutManager.renderWorkoutView();          
             }          
         };          
           
