@@ -15,7 +15,7 @@
                         brand: {  
                             50: '#fff7ed',  
                             100: '#ffedd5',  
-                            400: '#fb923c',
+                            400: '#fb923c',  
                             500: '#f97316',  
                             600: '#ea580c',  
                             700: '#c2410c',  
@@ -59,7 +59,7 @@
             </div>  
             <div>  
                 <h1 class="text-sm font-bold leading-tight tracking-wide text-white">IRON LOG</h1>  
-                <p class="text-[9px] text-slate-400 font-medium tracking-wider">WORKOUT TRACKER</p>  
+                <p class="text-[9px] text-slate-400 font-medium tracking-wider">WORKOUT & YOUTUBE TRACKER</p>  
             </div>  
         </div>  
         <!-- Active Timer Badge -->  
@@ -74,6 +74,23 @@
   
         <!-- VIEW 1: HOME / CALENDAR -->  
         <section id="view-calendar" class="space-y-4">  
+            <!-- Goals Section (Home Top) -->  
+            <div class="bg-slate-800 p-4 rounded-2xl border border-slate-700/70 shadow-lg space-y-3">  
+                <div class="flex justify-between items-center">  
+                    <div class="flex items-center gap-1.5">  
+                        <i class="fa-solid fa-bullseye text-brand-400"></i>  
+                        <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider">トレーニング目標</h3>  
+                    </div>  
+                    <button onclick="GoalManager.openAddGoalModal()" class="text-[11px] font-bold text-brand-400 hover:text-brand-300 flex items-center gap-1">  
+                        <i class="fa-solid fa-plus text-[10px]"></i> 目標追加  
+                    </button>  
+                </div>  
+                <div id="home-goals-container" class="space-y-2">  
+                    <!-- 動的生成 -->  
+                </div>  
+            </div>  
+
+            <!-- Calendar Section -->  
             <div class="bg-slate-800 p-4 rounded-2xl border border-slate-700/70 shadow-lg">  
                 <div class="flex justify-between items-center mb-4">  
                     <div>  
@@ -339,7 +356,15 @@
   
             <div class="bg-slate-800 p-4 rounded-2xl border border-slate-700 space-y-3">  
                 <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider">種目・部位カスタマイズ</h3>  
-                <div class="space-y-2">  
+                
+                <!-- 種目タイプ切り替えタブ -->  
+                <div class="grid grid-cols-2 gap-1 bg-slate-900 p-1 rounded-xl border border-slate-700 text-xs font-bold text-center mb-2">  
+                    <button type="button" onclick="SettingsManager.switchAddExTab('normal')" id="tab-add-normal" class="py-1.5 rounded-lg bg-brand-500 text-white transition">通常種目</button>  
+                    <button type="button" onclick="SettingsManager.switchAddExTab('youtube')" id="tab-add-youtube" class="py-1.5 rounded-lg text-slate-400 transition">YouTube種目</button>  
+                </div>  
+
+                <!-- 通常種目フォーム -->  
+                <div id="form-add-normal" class="space-y-2">  
                     <input type="text" id="new-ex-name" placeholder="例: インクラインチェストプレス" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">  
                     <div class="grid grid-cols-2 gap-2">  
                         <select id="new-ex-part" class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">  
@@ -352,9 +377,19 @@
                         </select>  
                         <input type="number" id="new-ex-bw" placeholder="自重負荷率(%) 例:95" class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">  
                     </div>  
-                    <input type="text" id="new-ex-youtube" placeholder="YouTube動画URL または 動画ID (任意)" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">  
-                    <button onclick="SettingsManager.addNewExercise()" class="w-full bg-brand-500 hover:bg-brand-600 text-white font-bold py-2 rounded-xl text-xs shadow-md transition">  
-                        + 新しい種目を追加登録  
+                    <input type="text" id="new-ex-youtube" placeholder="フォーム解説YouTube URL (任意)" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">  
+                    <button onclick="SettingsManager.addNewExercise('normal')" class="w-full bg-brand-500 hover:bg-brand-600 text-white font-bold py-2 rounded-xl text-xs shadow-md transition">  
+                        + 通常種目を追加登録  
+                    </button>  
+                </div>  
+
+                <!-- YouTube種目フォーム -->  
+                <div id="form-add-youtube" class="space-y-2 hidden">  
+                    <input type="text" id="new-yt-title" placeholder="例: 10分全身ストレッチ / ヨガ" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">  
+                    <input type="text" id="new-yt-url" placeholder="YouTube動画 URL (例: https://youtu.be/...)" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">  
+                    <textarea id="new-yt-memo" placeholder="メモ・感想（任意）" rows="2" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white placeholder-slate-500"></textarea>  
+                    <button onclick="SettingsManager.addNewExercise('youtube')" class="w-full bg-rose-600 hover:bg-rose-700 text-white font-bold py-2 rounded-xl text-xs shadow-md transition">  
+                        + YouTube種目を追加登録  
                     </button>  
                 </div>  
             </div>  
@@ -363,7 +398,7 @@
                 <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider">システム</h3>  
                 <div class="flex justify-between items-center py-1">  
                     <button onclick="DataManager.clearAllData()" class="text-rose-400 font-bold hover:underline">データの初期化</button>  
-                    <span class="text-[10px] text-slate-500">Ver 1.3.0</span>  
+                    <span class="text-[10px] text-slate-500">Ver 1.4.0</span>  
                 </div>  
             </div>  
         </section>  
@@ -385,6 +420,7 @@
                 <button onclick="WorkoutManager.filterExercises('肩')" class="part-filter-btn px-3 py-1 rounded-full bg-slate-700 text-slate-300 hover:bg-slate-600 whitespace-nowrap">肩</button>  
                 <button onclick="WorkoutManager.filterExercises('腕')" class="part-filter-btn px-3 py-1 rounded-full bg-slate-700 text-slate-300 hover:bg-slate-600 whitespace-nowrap">腕</button>  
                 <button onclick="WorkoutManager.filterExercises('腹筋')" class="part-filter-btn px-3 py-1 rounded-full bg-slate-700 text-slate-300 hover:bg-slate-600 whitespace-nowrap">腹筋</button>  
+                <button onclick="WorkoutManager.filterExercises('youtube')" class="part-filter-btn px-3 py-1 rounded-full bg-rose-500/20 text-rose-400 hover:bg-rose-500/30 whitespace-nowrap"><i class="fa-brands fa-youtube mr-1"></i>YouTube</button>  
             </div>  
             <div id="master-exercise-list" class="flex-1 overflow-y-auto space-y-2 pr-1 my-1"></div>  
             <button onclick="UIManager.toggleModal('select-exercise'); UIManager.switchView('settings');" class="w-full py-2 bg-slate-700/70 hover:bg-slate-700 border border-slate-600/80 text-slate-300 font-bold rounded-xl text-xs transition flex items-center justify-center gap-1.5">  
@@ -414,7 +450,7 @@
                 <button onclick="UIManager.toggleModal('workout-memo')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>  
             </div>  
             <p class="text-xs text-slate-300">本日のトレーニングの感想やコンディションを記録して完了します。</p>  
-            <textarea id="workout-memo-input" rows="4" placeholder="例: パンプ感が良かった！ベンチプレスの重量を＋2.5kg更新できた。" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500"></textarea>  
+            <textarea id="workout-memo-input" rows="4" placeholder="例: パンプ感が良かった！ストレッチで身体が軽くなった。" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500"></textarea>  
             <div class="flex gap-2 pt-1">  
                 <button onclick="UIManager.toggleModal('workout-memo')" class="flex-1 py-2.5 bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold rounded-xl text-xs transition">キャンセル</button>  
                 <button onclick="WorkoutManager.saveMemoAndFinish()" class="flex-1 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-black rounded-xl text-xs shadow-md transition">保存して記録完了</button>  
@@ -422,6 +458,36 @@
         </div>  
     </div>  
   
+    <!-- Add Goal Modal -->  
+    <div id="modal-add-goal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">  
+        <div class="bg-slate-800 border border-slate-700 w-full max-w-sm rounded-2xl p-4 space-y-3">  
+            <div class="flex justify-between items-center border-b border-slate-700/60 pb-2">  
+                <h3 class="font-bold text-white text-sm flex items-center gap-2">  
+                    <i class="fa-solid fa-bullseye text-brand-400"></i> 目標の追加  
+                </h3>  
+                <button onclick="UIManager.toggleModal('add-goal')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>  
+            </div>  
+            <div class="space-y-2 text-xs">  
+                <div>  
+                    <label class="text-slate-400 font-bold block mb-1">目標タイトル</label>  
+                    <input type="text" id="goal-title-input" placeholder="例: ベンチプレス100kg達成" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white">  
+                </div>  
+                <div>  
+                    <label class="text-slate-400 font-bold block mb-1">詳細内容 (任意)</label>  
+                    <input type="text" id="goal-desc-input" placeholder="例: フォームを安定させて綺麗に挙げる" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white">  
+                </div>  
+                <div>  
+                    <label class="text-slate-400 font-bold block mb-1">期限 (任意)</label>  
+                    <input type="date" id="goal-due-input" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white font-mono">  
+                </div>  
+            </div>  
+            <div class="flex gap-2 pt-2">  
+                <button onclick="UIManager.toggleModal('add-goal')" class="flex-1 py-2.5 bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold rounded-xl text-xs transition">キャンセル</button>  
+                <button onclick="GoalManager.saveNewGoal()" class="flex-1 py-2.5 bg-brand-500 hover:bg-brand-600 text-white font-black rounded-xl text-xs shadow-md transition">追加する</button>  
+            </div>  
+        </div>  
+    </div>  
+
     <!-- Edit Timer Preset Modal -->  
     <div id="modal-edit-preset" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">  
         <div class="bg-slate-800 border border-slate-700 w-full max-w-sm rounded-2xl p-4 space-y-3">  
@@ -463,7 +529,7 @@
     <div id="modal-youtube" class="hidden fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">  
         <div class="bg-slate-800 border border-slate-700 w-full max-w-md rounded-2xl p-4 space-y-3">  
             <div class="flex justify-between items-center border-b border-slate-700 pb-2">  
-                <h3 id="youtube-modal-title" class="font-bold text-white text-sm truncate"><i class="fa-brands fa-youtube text-rose-500 mr-2"></i>フォーム解説動画</h3>  
+                <h3 id="youtube-modal-title" class="font-bold text-white text-sm truncate"><i class="fa-brands fa-youtube text-rose-500 mr-2"></i>動画プレイヤー</h3>  
                 <button onclick="UIManager.closeYouTubeModal()" class="text-slate-400 hover:text-white p-1"><i class="fa-solid fa-xmark text-lg"></i></button>  
             </div>  
             <div id="youtube-player-container" class="aspect-video bg-black rounded-xl overflow-hidden flex items-center justify-center text-xs text-slate-500"></div>  
@@ -501,7 +567,7 @@
         </div>  
     </nav>  
 
-    <!-- REFACTORED APPLICATION LOGIC -->  
+    <!-- APPLICATION LOGIC -->  
     <script>  
         /**  
          * 1. Utility: 共通関数モジュール  
@@ -518,7 +584,6 @@
                 const r = parseFloat(reps) || 0;  
                 if (w <= 0 || r <= 0) return 0;  
                 if (r === 1) return w;  
-                // Epley formula  
                 return Math.round(w * (1 + r / 30) * 10) / 10;  
             },  
             extractYouTubeId(url) {  
@@ -546,26 +611,39 @@
                 WORKOUT_MEMOS: 'ironlog_workout_memos',  
                 COMPLETED_DATES: 'ironlog_completed_dates',  
                 TIMER_PRESETS: 'ironlog_timer_presets',  
-                USER_PROFILE: 'ironlog_user_profile'  
+                USER_PROFILE: 'ironlog_user_profile',  
+                GOALS: 'ironlog_goals'  
             },  
             DEFAULT_EXERCISES: [  
-                { id: 'ex1', name: 'ベンチプレス', part: '胸', bodyweightPct: 0, youtubeUrl: 'https://www.youtube.com/watch?v=vthMCtgVtFw' },  
-                { id: 'ex2', name: 'インクラインダンベルプレス', part: '胸', bodyweightPct: 0, youtubeUrl: '' },  
-                { id: 'ex3', name: 'スクワット', part: '脚', bodyweightPct: 0, youtubeUrl: '' },  
-                { id: 'ex4', name: '懸垂 (チンニング)', part: '背中', bodyweightPct: 95, youtubeUrl: '' },  
-                { id: 'ex5', name: 'ショルダープレス', part: '肩', bodyweightPct: 0, youtubeUrl: '' },  
-                { id: 'ex6', name: 'アームカール', part: '腕', bodyweightPct: 0, youtubeUrl: '' },  
-                { id: 'ex7', name: 'クランチ', part: '腹筋', bodyweightPct: 0, youtubeUrl: '' },  
-                { id: 'ex8', name: 'アブローラー', part: '腹筋', bodyweightPct: 0, youtubeUrl: '' }  
+                { id: 'ex1', type: 'normal', name: 'ベンチプレス', part: '胸', bodyweightPct: 0, youtubeUrl: 'https://www.youtube.com/watch?v=vthMCtgVtFw' },  
+                { id: 'ex2', type: 'normal', name: 'インクラインダンベルプレス', part: '胸', bodyweightPct: 0, youtubeUrl: '' },  
+                { id: 'ex3', type: 'normal', name: 'スクワット', part: '脚', bodyweightPct: 0, youtubeUrl: '' },  
+                { id: 'ex4', type: 'normal', name: '懸垂 (チンニング)', part: '背中', bodyweightPct: 95, youtubeUrl: '' },  
+                { id: 'ex5', type: 'normal', name: 'ショルダープレス', part: '肩', bodyweightPct: 0, youtubeUrl: '' },  
+                { id: 'ex6', type: 'normal', name: 'アームカール', part: '腕', bodyweightPct: 0, youtubeUrl: '' },  
+                { id: 'ex7', type: 'normal', name: 'クランチ', part: '腹筋', bodyweightPct: 0, youtubeUrl: '' },  
+                { id: 'ex8', type: 'normal', name: 'アブローラー', part: '腹筋', bodyweightPct: 0, youtubeUrl: '' },  
+                { id: 'yt1', type: 'youtube', name: '10分全身ストレッチ (初心者向け)', url: 'https://www.youtube.com/watch?v=UItW_WDAw4g', videoId: 'UItW_WDAw4g', thumbnail: 'https://img.youtube.com/vi/UItW_WDAw4g/hqdefault.jpg', memo: '毎朝のルーティン' }  
             ],  
             DEFAULT_PRESETS: [  
                 { id: 'p1', name: '標準インターバル', workSec: 60, restSec: 30, sets: 3 },  
                 { id: 'p2', name: 'HIIT (30秒/15秒)', workSec: 30, restSec: 15, sets: 8 }  
             ],  
+            DEFAULT_GOALS: [  
+                { id: 'g1', title: 'ベンチプレス100kg達成', desc: 'フォームを安定させて綺麗に挙げる', dueDate: '2026-12-31', completed: false }  
+            ],  
             loadData(key, defaultVal) {  
                 try {  
                     const item = localStorage.getItem(key);  
-                    return item ? JSON.parse(item) : defaultVal;  
+                    if (!item) return defaultVal;  
+                    const parsed = JSON.parse(item);  
+                    // 既存データ（古いマスターデータなど）に type が無い場合のマイグレーション保護  
+                    if (key === this.KEYS.MASTER_EXERCISES && Array.isArray(parsed)) {  
+                        parsed.forEach(ex => {  
+                            if (!ex.type) ex.type = 'normal';  
+                        });  
+                    }  
+                    return parsed;  
                 } catch (e) {  
                     console.error(`Error loading key ${key}`, e);  
                     return defaultVal;  
@@ -585,9 +663,91 @@
                 }  
             }  
         };  
+
+        /**  
+         * 3. GoalManager: 目標管理モジュール（ホーム画面用）  
+         */  
+        const GoalManager = {  
+            goals: [],  
+            init() {  
+                this.goals = DataManager.loadData(DataManager.KEYS.GOALS, DataManager.DEFAULT_GOALS);  
+                this.renderGoals();  
+            },  
+            renderGoals() {  
+                const container = document.getElementById('home-goals-container');  
+                if (!container) return;  
+                container.innerHTML = '';  
+
+                if (this.goals.length === 0) {  
+                    container.innerHTML = `<div class="text-xs text-slate-500 text-center py-2">目標が設定されていません</div>`;  
+                    return;  
+                }  
+
+                this.goals.forEach((g, idx) => {  
+                    const checkIcon = g.completed ? '<i class="fa-solid fa-circle-check text-emerald-400 text-base"></i>' : '<i class="fa-regular fa-circle text-slate-500 text-base"></i>';  
+                    const titleClass = g.completed ? 'line-through text-slate-500 font-bold text-xs' : 'text-slate-100 font-bold text-xs';  
+                    const dueHtml = g.dueDate ? `<span class="text-[10px] text-amber-400 font-mono"><i class="fa-regular fa-clock mr-1"></i>${g.dueDate}</span>` : '';  
+                    const descHtml = g.desc ? `<p class="text-[11px] text-slate-400 mt-0.5">${g.desc}</p>` : '';  
+
+                    const card = document.createElement('div');  
+                    card.className = 'bg-slate-900/70 p-3 rounded-xl border border-slate-700/80 flex items-start justify-between gap-2 transition';  
+                    card.innerHTML = `  
+                        <div class="flex items-start gap-2.5 flex-1 min-w-0">  
+                            <button onclick="GoalManager.toggleGoal(${idx})" class="mt-0.5 focus:outline-none">${checkIcon}</button>  
+                            <div class="flex-1 min-w-0">  
+                                <div class="flex justify-between items-center gap-2">  
+                                    <span class="${titleClass} truncate">${g.title}</span>  
+                                    ${dueHtml}  
+                                </div>  
+                                ${descHtml}  
+                            </div>  
+                        </div>  
+                        <button onclick="GoalManager.deleteGoal(${idx})" class="text-slate-500 hover:text-rose-400 p-1"><i class="fa-solid fa-trash-can text-xs"></i></button>  
+                    `;  
+                    container.appendChild(card);  
+                });  
+            },  
+            openAddGoalModal() {  
+                document.getElementById('goal-title-input').value = '';  
+                document.getElementById('goal-desc-input').value = '';  
+                document.getElementById('goal-due-input').value = '';  
+                UIManager.toggleModal('add-goal');  
+            },  
+            saveNewGoal() {  
+                const title = document.getElementById('goal-title-input').value.trim();  
+                if (!title) {  
+                    alert('目標タイトルを入力してください');  
+                    return;  
+                }  
+                const desc = document.getElementById('goal-desc-input').value.trim();  
+                const dueDate = document.getElementById('goal-due-input').value;  
+
+                this.goals.push({  
+                    id: 'goal_' + Date.now(),  
+                    title,  
+                    desc,  
+                    dueDate,  
+                    completed: false  
+                });  
+                DataManager.saveData(DataManager.KEYS.GOALS, this.goals);  
+                this.renderGoals();  
+                UIManager.toggleModal('add-goal');  
+                Utility.showToast('目標を追加しました');  
+            },  
+            toggleGoal(idx) {  
+                this.goals[idx].completed = !this.goals[idx].completed;  
+                DataManager.saveData(DataManager.KEYS.GOALS, this.goals);  
+                this.renderGoals();  
+            },  
+            deleteGoal(idx) {  
+                this.goals.splice(idx, 1);  
+                DataManager.saveData(DataManager.KEYS.GOALS, this.goals);  
+                this.renderGoals();  
+            }  
+        };  
   
         /**  
-         * 3. WorkoutManager: トレーニング記録ドメインロジック  
+         * 4. WorkoutManager: トレーニング記録ドメインロジック（通常種目 ＆ YouTube種目対応）  
          */  
         const WorkoutManager = {  
             logs: {},  
@@ -613,9 +773,11 @@
                 const dayLogs = this.getLogsForDate(dateStr);  
                 let total = 0;  
                 dayLogs.forEach(ex => {  
-                    ex.sets.forEach(s => {  
-                        total += (parseFloat(s.weight) || 0) * (parseFloat(s.reps) || 0);  
-                    });  
+                    if (ex.type === 'normal' && ex.sets) {  
+                        ex.sets.forEach(s => {  
+                            total += (parseFloat(s.weight) || 0) * (parseFloat(s.reps) || 0);  
+                        });  
+                    }  
                 });  
                 return Math.round(total * 10) / 10;  
             },  
@@ -629,64 +791,122 @@
 
                 const dayLogs = this.getLogsForDate(activeDate);  
                 if (dayLogs.length === 0) {  
-                    container.innerHTML = `<div class="text-center py-8 text-slate-500 text-xs font-bold">種目がまだ追加されていません</div>`;  
+                    container.innerHTML = `<div class="text-center py-8 text-slate-500 text-xs font-bold">メニューや動画がまだ追加されていません</div>`;  
                     return;  
                 }  
   
                 dayLogs.forEach((ex, exIdx) => {  
-                    const masterEx = this.masterExercises.find(m => m.name === ex.name);  
-                    const youtubeBtnHtml = masterEx && masterEx.youtubeUrl ?   
-                        `<button onclick="UIManager.openYouTubeModal('${masterEx.name}', '${masterEx.youtubeUrl}')" class="text-rose-400 hover:text-rose-300 text-xs px-2 py-1 bg-rose-500/10 rounded-lg flex items-center gap-1 border border-rose-500/20"><i class="fa-brands fa-youtube"></i> 解説</button>` : '';  
-  
-                    let setsHtml = '';  
-                    ex.sets.forEach((set, setIdx) => {  
-                        const isActive = (UIManager.state.activeExIndex === exIdx && UIManager.state.activeSetIndex === setIdx && !document.getElementById('numpad-container').classList.contains('hidden'));  
-                        const borderClass = isActive ? 'border-brand-500 bg-brand-500/10' : 'border-slate-700/80 bg-slate-900/60';  
-                        const completedCheck = set.completed ? '<i class="fa-solid fa-check text-emerald-400"></i>' : '<span class="text-slate-500">'+(setIdx+1)+'</span>';  
-
-                        setsHtml += `  
-                            <div class="flex items-center justify-between p-2 rounded-xl border ${borderClass} text-xs transition">  
-                                <div class="flex items-center gap-2 font-mono font-bold">  
-                                    <div class="w-6 h-6 flex items-center justify-center rounded-lg bg-slate-800 text-[11px]">${completedCheck}</div>  
-                                    <button onclick="UIManager.openNumpad(${exIdx}, ${setIdx}, 'weight')" class="px-2 py-1 rounded bg-slate-800 text-slate-100 hover:bg-slate-700">${set.weight} kg</button>  
-                                    <span class="text-slate-500">×</span>  
-                                    <button onclick="UIManager.openNumpad(${exIdx}, ${setIdx}, 'reps')" class="px-2 py-1 rounded bg-slate-800 text-slate-100 hover:bg-slate-700">${set.reps} 回</button>  
-                                </div>  
-                                <div class="flex items-center gap-1">  
-                                    <button onclick="WorkoutManager.toggleSetComplete(${exIdx}, ${setIdx})" class="p-1.5 text-slate-400 hover:text-emerald-400"><i class="fa-solid fa-circle-check"></i></button>  
-                                    <button onclick="WorkoutManager.removeSet(${exIdx}, ${setIdx})" class="p-1.5 text-slate-400 hover:text-rose-400"><i class="fa-solid fa-trash-can"></i></button>  
-                                </div>  
-                            </div>  
-                        `;  
-                    });  
-
                     const card = document.createElement('div');  
                     card.className = 'bg-slate-800 p-3.5 rounded-2xl border border-slate-700 space-y-2.5 shadow-md';  
-                    card.innerHTML = `  
-                        <div class="flex justify-between items-center border-b border-slate-700/60 pb-2">  
-                            <div class="flex items-center gap-2">  
-                                <span class="font-bold text-sm text-white">${ex.name}</span>  
-                                ${youtubeBtnHtml}  
+
+                    if (ex.type === 'youtube') {  
+                        // YouTube種目のUI描画  
+                        const isCompleted = ex.completed ? true : false;  
+                        const checkIcon = isCompleted ? '<i class="fa-solid fa-circle-check text-emerald-400 text-base"></i> 完了' : '<i class="fa-regular fa-circle text-slate-400 text-base"></i> 未完了';  
+                        const checkBtnClass = isCompleted ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : 'bg-slate-900/60 text-slate-300 border-slate-700';  
+                        const memoHtml = ex.memo ? `<p class="text-[11px] text-slate-400 italic">${ex.memo}</p>` : '';  
+
+                        card.innerHTML = `  
+                            <div class="flex justify-between items-center border-b border-slate-700/60 pb-2">  
+                                <div class="flex items-center gap-2">  
+                                    <span class="px-2 py-0.5 rounded-md bg-rose-500/20 text-rose-400 text-[10px] font-bold"><i class="fa-brands fa-youtube mr-1"></i>YouTube</span>  
+                                    <span class="font-bold text-sm text-white truncate max-w-[200px]">${ex.name}</span>  
+                                </div>  
+                                <button onclick="WorkoutManager.removeExercise(${exIdx})" class="text-slate-500 hover:text-rose-400 text-xs"><i class="fa-solid fa-xmark"></i></button>  
                             </div>  
-                            <button onclick="WorkoutManager.removeExercise(${exIdx})" class="text-slate-500 hover:text-rose-400 text-xs"><i class="fa-solid fa-xmark"></i></button>  
-                        </div>  
-                        <div class="space-y-1.5">${setsHtml}</div>  
-                        <button onclick="WorkoutManager.addSet(${exIdx})" class="w-full py-1.5 bg-slate-700/50 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold border border-slate-600/50 flex items-center justify-center gap-1 transition">+ セット追加</button>  
-                    `;  
+                            <div class="space-y-2">  
+                                <div class="relative rounded-xl overflow-hidden aspect-video bg-black/40 border border-slate-700 group cursor-pointer" onclick="UIManager.openYouTubeModal('${ex.name}', '${ex.url}')">  
+                                    <img src="${ex.thumbnail || 'https://img.youtube.com/vi/'+ex.videoId+'/hqdefault.jpg'}" class="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition">  
+                                    <div class="absolute inset-0 flex items-center justify-center">  
+                                        <div class="w-12 h-12 rounded-full bg-rose-600 text-white flex items-center justify-center shadow-lg group-hover:scale-110 transition">  
+                                            <i class="fa-solid fa-play ml-0.5 text-base"></i>  
+                                        </div>  
+                                    </div>  
+                                </div>  
+                                ${memoHtml}  
+                                <button onclick="WorkoutManager.toggleYouTubeComplete(${exIdx})" class="w-full py-2.5 px-3 rounded-xl border ${checkBtnClass} font-bold text-xs flex items-center justify-center gap-2 transition">  
+                                    ${checkIcon}  
+                                </button>  
+                            </div>  
+                        `;  
+                    } else {  
+                        // 通常種目のUI描画  
+                        const masterEx = this.masterExercises.find(m => m.name === ex.name);  
+                        const youtubeBtnHtml = masterEx && masterEx.youtubeUrl ?   
+                            `<button onclick="UIManager.openYouTubeModal('${masterEx.name}', '${masterEx.youtubeUrl}')" class="text-rose-400 hover:text-rose-300 text-xs px-2 py-1 bg-rose-500/10 rounded-lg flex items-center gap-1 border border-rose-500/20"><i class="fa-brands fa-youtube"></i> 解説</button>` : '';  
+  
+                        let setsHtml = '';  
+                        if (ex.sets) {  
+                            ex.sets.forEach((set, setIdx) => {  
+                                const isActive = (UIManager.state.activeExIndex === exIdx && UIManager.state.activeSetIndex === setIdx && !document.getElementById('numpad-container').classList.contains('hidden'));  
+                                const borderClass = isActive ? 'border-brand-500 bg-brand-500/10' : 'border-slate-700/80 bg-slate-900/60';  
+                                const completedCheck = set.completed ? '<i class="fa-solid fa-check text-emerald-400"></i>' : '<span class="text-slate-500">'+(setIdx+1)+'</span>';  
+
+                                setsHtml += `  
+                                    <div class="flex items-center justify-between p-2 rounded-xl border ${borderClass} text-xs transition">  
+                                        <div class="flex items-center gap-2 font-mono font-bold">  
+                                            <div class="w-6 h-6 flex items-center justify-center rounded-lg bg-slate-800 text-[11px]">${completedCheck}</div>  
+                                            <button onclick="UIManager.openNumpad(${exIdx}, ${setIdx}, 'weight')" class="px-2 py-1 rounded bg-slate-800 text-slate-100 hover:bg-slate-700">${set.weight} kg</button>  
+                                            <span class="text-slate-500">×</span>  
+                                            <button onclick="UIManager.openNumpad(${exIdx}, ${setIdx}, 'reps')" class="px-2 py-1 rounded bg-slate-800 text-slate-100 hover:bg-slate-700">${set.reps} 回</button>  
+                                        </div>  
+                                        <div class="flex items-center gap-1">  
+                                            <button onclick="WorkoutManager.toggleSetComplete(${exIdx}, ${setIdx})" class="p-1.5 text-slate-400 hover:text-emerald-400"><i class="fa-solid fa-circle-check"></i></button>  
+                                            <button onclick="WorkoutManager.removeSet(${exIdx}, ${setIdx})" class="p-1.5 text-slate-400 hover:text-rose-400"><i class="fa-solid fa-trash-can"></i></button>  
+                                        </div>  
+                                    </div>  
+                                `;  
+                            });  
+                        }  
+
+                        card.innerHTML = `  
+                            <div class="flex justify-between items-center border-b border-slate-700/60 pb-2">  
+                                <div class="flex items-center gap-2">  
+                                    <span class="font-bold text-sm text-white">${ex.name}</span>  
+                                    ${youtubeBtnHtml}  
+                                </div>  
+                                <button onclick="WorkoutManager.removeExercise(${exIdx})" class="text-slate-500 hover:text-rose-400 text-xs"><i class="fa-solid fa-xmark"></i></button>  
+                            </div>  
+                            <div class="space-y-1.5">${setsHtml}</div>  
+                            <button onclick="WorkoutManager.addSet(${exIdx})" class="w-full py-1.5 bg-slate-700/50 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold border border-slate-600/50 flex items-center justify-center gap-1 transition">+ セット追加</button>  
+                        `;  
+                    }  
                     container.appendChild(card);  
                 });  
             },  
-            addExerciseToActiveDate(exName) {  
+            addExerciseToActiveDate(masterEx) {  
                 const activeDate = UIManager.state.selectedDate;  
                 const dayLogs = this.getLogsForDate(activeDate);  
-                dayLogs.push({  
-                    name: exName,  
-                    sets: [{ weight: '60.0', reps: '10', completed: false }]  
-                });  
+
+                if (masterEx.type === 'youtube') {  
+                    dayLogs.push({  
+                        type: 'youtube',  
+                        name: masterEx.name,  
+                        url: masterEx.url,  
+                        videoId: masterEx.videoId,  
+                        thumbnail: masterEx.thumbnail,  
+                        memo: masterEx.memo || '',  
+                        completed: false  
+                    });  
+                } else {  
+                    dayLogs.push({  
+                        type: 'normal',  
+                        name: masterEx.name,  
+                        sets: [{ weight: '60.0', reps: '10', completed: false }]  
+                    });  
+                }  
+
                 this.saveLogsForDate(activeDate, dayLogs);  
                 this.renderWorkoutView();  
                 UIManager.toggleModal('select-exercise');  
-                Utility.showToast(`${exName}を追加しました`);  
+                Utility.showToast(`${masterEx.name}を追加しました`);  
+            },  
+            toggleYouTubeComplete(exIdx) {  
+                const activeDate = UIManager.state.selectedDate;  
+                const dayLogs = this.getLogsForDate(activeDate);  
+                dayLogs[exIdx].completed = !dayLogs[exIdx].completed;  
+                this.saveLogsForDate(activeDate, dayLogs);  
+                this.renderWorkoutView();  
             },  
             addSet(exIdx) {  
                 const activeDate = UIManager.state.selectedDate;  
@@ -724,7 +944,7 @@
                 const setIdx = UIManager.state.activeSetIndex;  
                 const activeDate = UIManager.state.selectedDate;  
                 const dayLogs = this.getLogsForDate(activeDate);  
-                if (dayLogs[exIdx] && dayLogs[exIdx].sets[setIdx]) {  
+                if (dayLogs[exIdx] && dayLogs[exIdx].sets && dayLogs[exIdx].sets[setIdx]) {  
                     dayLogs[exIdx].sets[setIdx].completed = true;  
                     this.saveLogsForDate(activeDate, dayLogs);  
                 }  
@@ -738,7 +958,10 @@
             filterExercises(part) {  
                 this.currentFilterPart = part;  
                 document.querySelectorAll('.part-filter-btn').forEach(btn => {  
-                    if (btn.textContent === (part === 'ALL' ? 'すべて' : part)) {  
+                    const isTarget = (part === 'ALL' && btn.textContent === 'すべて') ||   
+                                     (part === 'youtube' && btn.textContent.includes('YouTube')) ||   
+                                     (btn.textContent === part);  
+                    if (isTarget) {  
                         btn.className = 'part-filter-btn active px-3 py-1 rounded-full bg-brand-500 text-white whitespace-nowrap';  
                     } else {  
                         btn.className = 'part-filter-btn px-3 py-1 rounded-full bg-slate-700 text-slate-300 hover:bg-slate-600 whitespace-nowrap';  
@@ -749,12 +972,26 @@
             renderMasterExerciseList() {  
                 const listEl = document.getElementById('master-exercise-list');  
                 listEl.innerHTML = '';  
-                const filtered = this.masterExercises.filter(ex => this.currentFilterPart === 'ALL' || ex.part === this.currentFilterPart);  
+                const filtered = this.masterExercises.filter(ex => {  
+                    if (this.currentFilterPart === 'ALL') return true;  
+                    if (this.currentFilterPart === 'youtube') return ex.type === 'youtube';  
+                    return ex.type === 'normal' && ex.part === this.currentFilterPart;  
+                });  
+
+                if (filtered.length === 0) {  
+                    listEl.innerHTML = `<div class="text-center py-4 text-slate-500 text-xs">登録されている種目がありません</div>`;  
+                    return;  
+                }  
+
                 filtered.forEach(ex => {  
                     const item = document.createElement('button');  
                     item.className = 'w-full p-2.5 bg-slate-700/60 hover:bg-slate-700 rounded-xl flex justify-between items-center text-xs text-white font-bold transition';  
-                    item.innerHTML = `<span>${ex.name}</span><span class="text-[10px] text-slate-400 px-2 py-0.5 bg-slate-800 rounded-md">${ex.part}</span>`;  
-                    item.onclick = () => this.addExerciseToActiveDate(ex.name);  
+                    if (ex.type === 'youtube') {  
+                        item.innerHTML = `<div class="flex items-center gap-2 truncate"><span class="px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-400 text-[10px]"><i class="fa-brands fa-youtube"></i></span><span class="truncate">${ex.name}</span></div><span class="text-[10px] text-rose-400">YouTube</span>`;  
+                    } else {  
+                        item.innerHTML = `<span class="truncate">${ex.name}</span><span class="text-[10px] text-slate-400 px-2 py-0.5 bg-slate-800 rounded-md">${ex.part}</span>`;  
+                    }  
+                    item.onclick = () => this.addExerciseToActiveDate(ex);  
                     listEl.appendChild(item);  
                 });  
             },  
@@ -768,7 +1005,7 @@
                     dates.forEach(d => {  
                         const btn = document.createElement('button');  
                         btn.className = 'w-full p-2.5 bg-slate-700/60 hover:bg-slate-700 rounded-xl flex justify-between items-center text-xs text-white font-bold transition';  
-                        btn.innerHTML = `<span>${d}</span><span class="text-[10px] text-brand-400">${this.logs[d].length} 種目</span>`;  
+                        btn.innerHTML = `<span>${d}</span><span class="text-[10px] text-brand-400">${this.logs[d].length} 項目</span>`;  
                         btn.onclick = () => this.copyWorkoutFromDate(d);  
                         listContainer.appendChild(btn);  
                     });  
@@ -778,7 +1015,10 @@
             copyWorkoutFromDate(sourceDate) {  
                 const activeDate = UIManager.state.selectedDate;  
                 const sourceData = JSON.parse(JSON.stringify(this.getLogsForDate(sourceDate)));  
-                sourceData.forEach(ex => ex.sets.forEach(s => s.completed = false));  
+                sourceData.forEach(ex => {  
+                    if (ex.type === 'normal' && ex.sets) ex.sets.forEach(s => s.completed = false);  
+                    if (ex.type === 'youtube') ex.completed = false;  
+                });  
                 this.saveLogsForDate(activeDate, sourceData);  
                 this.renderWorkoutView();  
                 UIManager.toggleModal('copy-date');  
@@ -803,10 +1043,11 @@
         };  
   
         /**  
-         * 4. CalendarManager: ホーム／カレンダー表示モジュール  
+         * 5. CalendarManager: ホーム／カレンダー表示モジュール  
          */  
         const CalendarManager = {  
             renderCalendar() {  
+                GoalManager.renderGoals(); // ホーム画面の目標も再描画  
                 const state = UIManager.state;  
                 const year = state.selectedMonth.getFullYear();  
                 const month = state.selectedMonth.getMonth();  
@@ -882,7 +1123,7 @@
         };  
   
         /**  
-         * 5. TimerManager: タイマーモジュール  
+         * 6. TimerManager: タイマーモジュール  
          */  
         const TimerManager = {  
             presets: [],  
@@ -1085,7 +1326,7 @@
         };  
   
         /**  
-         * 6. StatisticsManager: 分析・グラフ描画モジュール  
+         * 7. StatisticsManager: 分析・グラフ描画モジュール  
          */  
         const StatisticsManager = {  
             chartInstance: null,  
@@ -1096,7 +1337,8 @@
             populateExerciseSelect() {  
                 const select = document.getElementById('chart-exercise-select');  
                 select.innerHTML = '';  
-                WorkoutManager.masterExercises.forEach(ex => {  
+                // 通常種目のみグラフ対象にする  
+                WorkoutManager.masterExercises.filter(ex => ex.type === 'normal').forEach(ex => {  
                     const opt = document.createElement('option');  
                     opt.value = ex.name;  
                     opt.textContent = ex.name;  
@@ -1122,7 +1364,7 @@
 
                 dates.forEach(d => {  
                     const dayLogs = WorkoutManager.logs[d];  
-                    const exLogs = dayLogs.filter(e => e.name === exName);  
+                    const exLogs = dayLogs.filter(e => e.type === 'normal' && e.name === exName);  
                     if (exLogs.length > 0) {  
                         let dayMaxW = 0;  
                         let dayMax1RM = 0;  
@@ -1188,7 +1430,7 @@
         };  
   
         /**  
-         * 7. SettingsManager: 設定モジュール  
+         * 8. SettingsManager: 設定モジュール  
          */  
         const SettingsManager = {  
             init() {  
@@ -1202,34 +1444,88 @@
                 DataManager.saveData(DataManager.KEYS.USER_PROFILE, { weight: w, fat: f });  
                 Utility.showToast('身体データを保存しました');  
             },  
-            addNewExercise() {  
-                const nameInput = document.getElementById('new-ex-name');  
-                const partSelect = document.getElementById('new-ex-part');  
-                const bwInput = document.getElementById('new-ex-bw');  
-                const ytInput = document.getElementById('new-ex-youtube');  
+            switchAddExTab(type) {  
+                const btnNormal = document.getElementById('tab-add-normal');  
+                const btnYt = document.getElementById('tab-add-youtube');  
+                const formNormal = document.getElementById('form-add-normal');  
+                const formYt = document.getElementById('form-add-youtube');  
 
-                const name = nameInput.value.trim();  
-                if (!name) {  
-                    alert('種目名を入力してください');  
-                    return;  
+                if (type === 'normal') {  
+                    btnNormal.className = 'py-1.5 rounded-lg bg-brand-500 text-white transition';  
+                    btnYt.className = 'py-1.5 rounded-lg text-slate-400 transition';  
+                    formNormal.classList.remove('hidden');  
+                    formYt.classList.add('hidden');  
+                } else {  
+                    btnYt.className = 'py-1.5 rounded-lg bg-rose-600 text-white transition';  
+                    btnNormal.className = 'py-1.5 rounded-lg text-slate-400 transition';  
+                    formYt.classList.remove('hidden');  
+                    formNormal.classList.add('hidden');  
                 }  
+            },  
+            addNewExercise(type) {  
+                if (type === 'youtube') {  
+                    const titleInput = document.getElementById('new-yt-title');  
+                    const urlInput = document.getElementById('new-yt-url');  
+                    const memoInput = document.getElementById('new-yt-memo');  
 
-                const newEx = {  
-                    id: 'ex_' + Date.now(),  
-                    name: name,  
-                    part: partSelect.value,  
-                    bodyweightPct: parseFloat(bwInput.value) || 0,  
-                    youtubeUrl: ytInput.value.trim()  
-                };  
+                    const title = titleInput.value.trim();  
+                    const url = urlInput.value.trim();  
+                    if (!title || !url) {  
+                        alert('タイトルとYouTube URLを入力してください');  
+                        return;  
+                    }  
 
-                WorkoutManager.masterExercises.push(newEx);  
-                DataManager.saveData(DataManager.KEYS.MASTER_EXERCISES, WorkoutManager.masterExercises);  
+                    const videoId = Utility.extractYouTubeId(url);  
+                    const thumbnail = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;  
 
-                nameInput.value = '';  
-                bwInput.value = '';  
-                ytInput.value = '';  
-                StatisticsManager.populateExerciseSelect();  
-                Utility.showToast(`種目「${name}」を追加登録しました`);  
+                    const newEx = {  
+                        id: 'yt_' + Date.now(),  
+                        type: 'youtube',  
+                        name: title,  
+                        url: url,  
+                        videoId: videoId,  
+                        thumbnail: thumbnail,  
+                        memo: memoInput.value.trim()  
+                    };  
+
+                    WorkoutManager.masterExercises.push(newEx);  
+                    DataManager.saveData(DataManager.KEYS.MASTER_EXERCISES, WorkoutManager.masterExercises);  
+
+                    titleInput.value = '';  
+                    urlInput.value = '';  
+                    memoInput.value = '';  
+                    StatisticsManager.populateExerciseSelect();  
+                    Utility.showToast(`YouTube種目「${title}」を追加登録しました`);  
+                } else {  
+                    const nameInput = document.getElementById('new-ex-name');  
+                    const partSelect = document.getElementById('new-ex-part');  
+                    const bwInput = document.getElementById('new-ex-bw');  
+                    const ytInput = document.getElementById('new-ex-youtube');  
+
+                    const name = nameInput.value.trim();  
+                    if (!name) {  
+                        alert('種目名を入力してください');  
+                        return;  
+                    }  
+
+                    const newEx = {  
+                        id: 'ex_' + Date.now(),  
+                        type: 'normal',  
+                        name: name,  
+                        part: partSelect.value,  
+                        bodyweightPct: parseFloat(bwInput.value) || 0,  
+                        youtubeUrl: ytInput.value.trim()  
+                    };  
+
+                    WorkoutManager.masterExercises.push(newEx);  
+                    DataManager.saveData(DataManager.KEYS.MASTER_EXERCISES, WorkoutManager.masterExercises);  
+
+                    nameInput.value = '';  
+                    bwInput.value = '';  
+                    ytInput.value = '';  
+                    StatisticsManager.populateExerciseSelect();  
+                    Utility.showToast(`通常種目「${name}」を追加登録しました`);  
+                }  
             }  
         };  
   
@@ -1250,6 +1546,7 @@
                 audioCtx: null  
             },  
             init() {  
+                GoalManager.init();  
                 WorkoutManager.init();  
                 TimerManager.init();  
                 SettingsManager.init();  
