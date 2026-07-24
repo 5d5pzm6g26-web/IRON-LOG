@@ -1,6 +1,3 @@
-// =========================================================
-// File: index.html
-// =========================================================
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -67,11 +64,6 @@
     <script type="module" src="./js/app.js"></script>
 </body>
 </html>
-
-
-// =========================================================
-// File: js/utils/Utility.js
-// =========================================================
 export class Utility {
     /**
      * 現在の日付を YYYY-MM-DD 形式で取得
@@ -95,9 +87,7 @@ export class Utility {
 }
 
 
-// =========================================================
-// File: js/core/DataManager.js
-// =========================================================
+
 export class DataManager {
     constructor() {
         this.storageKeyPrefix = 'ironlog_';
@@ -123,9 +113,7 @@ export class DataManager {
 }
 
 
-// =========================================================
-// File: js/managers/WorkoutManager.js
-// =========================================================
+
 import { Utility } from '../utils/Utility.js';
 
 export class WorkoutManager {
@@ -176,9 +164,7 @@ export class WorkoutManager {
 }
 
 
-// =========================================================
-// File: js/ui/UIManager.js
-// =========================================================
+
 import { Utility } from '../utils/Utility.js';
 
 export class UIManager {
@@ -305,9 +291,7 @@ export class UIManager {
 }
 
 
-// =========================================================
-// File: js/app.js
-// =========================================================
+
 import { DataManager } from './core/DataManager.js';
 import { WorkoutManager } from './managers/WorkoutManager.js';
 import { UIManager } from './ui/UIManager.js';
