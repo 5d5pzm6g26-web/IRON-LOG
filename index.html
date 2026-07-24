@@ -1,1345 +1,329 @@
+// =========================================================
+// File: index.html
+// =========================================================
 <!DOCTYPE html>
-<html lang="ja" class="dark">
+<html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <!-- iOS PWA 設定 -->
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="IRON LOG">
-    
-    <title>筋トレ記録アプリ IRON LOG</title>
-    
-    <!-- Tailwind CSS -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IRON LOG</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        brand: {
-                            50: '#fff7ed',
-                            100: '#ffedd5',
-                            400: '#fb923c',
-                            500: '#f97316',
-                            600: '#ea580c',
-                            700: '#c2410c',
-                        }
-                    }
-                }
-            }
+            theme: { extend: { colors: { brand: { 500: '#ef4444' } } } }
         }
     </script>
-    <!-- FontAwesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            user-select: none;
-            -webkit-user-select: none;
-            touch-action: manipulation;
-        }
-        .hide-scrollbar::-webkit-scrollbar {
-            display: none;
-        }
-        .hide-scrollbar {
-            -ms-overflow-style: none;
-            scrollbar-width: none;
-        }
-        .keypad-btn:active {
-            transform: scale(0.95);
-            background-color: rgba(249, 115, 22, 0.3);
-        }
-    </style>
 </head>
-<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col justify-between pb-20 select-none antialiased">
+<body class="bg-slate-900 text-slate-100 min-h-screen pb-20">
 
-    <!-- Top Header -->
-    <header class="bg-slate-800/90 backdrop-blur-md border-b border-slate-700/60 sticky top-0 z-40 px-4 py-2.5 flex justify-between items-center shadow-md">
-        <div class="flex items-center space-x-2">
-            <div class="bg-gradient-to-tr from-orange-600 to-amber-500 text-white p-1.5 rounded-xl shadow-lg shadow-orange-500/20">
-                <i class="fa-solid font-bold fa-dumbbell text-sm"></i>
-            </div>
-            <div>
-                <h1 class="text-sm font-bold leading-tight tracking-wide text-white">IRON LOG</h1>
-                <p class="text-[9px] text-slate-400 font-medium tracking-wider">WORKOUT TRACKER</p>
-            </div>
-        </div>
-        <!-- Active Timer Badge -->
-        <div id="timer-badge" onclick="switchView('timer')" class="hidden cursor-pointer items-center bg-amber-500/10 border border-amber-500/30 text-amber-400 px-3 py-1 rounded-full text-xs font-mono font-bold animate-pulse hover:bg-amber-500/20 transition">
-            <i class="fa-solid fa-stopwatch mr-1.5 text-amber-400"></i>
-            <span id="timer-display">00:00</span>
-        </div>
+    <!-- ヘッダー -->
+    <header class="bg-slate-800 p-4 shadow-md text-center">
+        <h1 class="text-xl font-bold text-brand-500 tracking-wider">IRON LOG</h1>
     </header>
 
-    <!-- MAIN CONTAINER -->
-    <main class="flex-1 max-w-md w-full mx-auto p-4 space-y-4">
-
-        <!-- VIEW 1: HOME / CALENDAR ONLY -->
-        <section id="view-calendar" class="space-y-4">
-            <div class="bg-slate-800 p-4 rounded-2xl border border-slate-700/70 shadow-lg">
-                <div class="flex justify-between items-center mb-4">
-                    <div>
-                        <span class="text-[10px] font-bold text-brand-400 uppercase tracking-widest">CALENDAR</span>
-                        <h3 id="calendar-month-year" class="text-lg font-black text-slate-100">----年 --月</h3>
-                    </div>
-                    <div class="flex gap-2">
-                        <button onclick="changeMonth(-1)" class="w-8 h-8 flex items-center justify-center bg-slate-700/80 rounded-xl text-slate-300 hover:bg-slate-600 active:scale-95 transition"><i class="fa-solid fa-chevron-left text-xs"></i></button>
-                        <button onclick="changeMonth(1)" class="w-8 h-8 flex items-center justify-center bg-slate-700/80 rounded-xl text-slate-300 hover:bg-slate-600 active:scale-95 transition"><i class="fa-solid fa-chevron-right text-xs"></i></button>
-                    </div>
-                </div>
-
-                <!-- Calendar Grid Header -->
-                <div class="grid grid-cols-7 gap-1 text-center text-xs font-bold text-slate-400 mb-2">
-                    <div class="text-rose-400">日</div>
-                    <div>月</div>
-                    <div>火</div>
-                    <div>水</div>
-                    <div>木</div>
-                    <div>金</div>
-                    <div class="text-sky-400">土</div>
-                </div>
-                <div id="calendar-days" class="grid grid-cols-7 gap-1.5 text-xs">
-                    <!-- Calendar days generated via JS -->
-                </div>
-            </div>
-
-            <!-- Selected Date Action Card -->
-            <div id="selected-date-card" class="bg-slate-800 p-4 rounded-2xl border border-slate-700 shadow-md flex justify-between items-center">
-                <div>
-                    <div class="text-[10px] font-bold text-slate-400 uppercase">選択中の日付</div>
-                    <div id="selected-date-display" class="text-base font-black text-white font-mono">----</div>
-                    <div id="selected-date-status" class="text-xs text-slate-400 mt-0.5">記録なし</div>
-                </div>
-                <button onclick="startWorkoutForSelectedDate()" class="bg-gradient-to-r from-brand-500 to-amber-500 hover:from-brand-600 hover:to-amber-600 active:scale-95 text-white font-bold px-4 py-3 rounded-xl shadow-lg shadow-brand-500/20 text-xs flex items-center gap-2 transition">
-                    <i class="fa-solid fa-pen-to-square"></i> 記録を開く
+    <!-- メインコンテンツ領域 -->
+    <main id="app-container" class="p-4">
+        
+        <!-- カレンダービュー -->
+        <section id="view-calendar" class="view-section">
+            <h2 class="text-lg font-bold mb-4 border-b border-slate-700 pb-2">Calendar / 記録</h2>
+            <div class="bg-slate-800 rounded-lg p-4 text-center text-slate-400">
+                <p>カレンダーUIがここに表示されます</p>
+                <button id="btn-start-today" class="mt-4 bg-brand-500 text-white px-6 py-2 rounded-full font-bold shadow-lg">
+                    今日のトレーニングを始める
                 </button>
-            </div>
-
-            <!-- Memo Display Card for Selected Date -->
-            <div id="selected-date-memo-card" class="hidden bg-slate-800/90 p-3.5 rounded-2xl border border-amber-500/30 shadow-md space-y-1">
-                <div class="text-[10px] font-bold text-amber-400 flex items-center gap-1">
-                    <i class="fa-solid fa-note-sticky"></i> トレーニングの感想・メモ
-                </div>
-                <div id="selected-date-memo-text" class="text-xs text-slate-200 font-medium whitespace-pre-wrap pl-1"></div>
             </div>
         </section>
 
-        <!-- VIEW 2: WORKOUT RECORDING -->
-        <section id="view-workout" class="hidden space-y-3">
+        <!-- ワークアウトビュー -->
+        <section id="view-workout" class="view-section hidden">
+            <div class="flex justify-between items-end mb-4 border-b border-slate-700 pb-2">
+                <h2 class="text-lg font-bold">Workout</h2>
+                <span id="workout-active-date" class="text-sm text-slate-400"></span>
+            </div>
             
-            <div class="flex justify-between items-center text-[11px] text-slate-400 px-1 py-0.5">
-                <div class="flex items-center gap-1.5 font-mono">
-                    <i class="fa-regular fa-calendar text-brand-400 text-xs"></i>
-                    <span>RECORDING DATE:</span>
-                    <span id="workout-active-date" class="font-bold text-slate-200">----</span>
-                </div>
-                <button onclick="switchView('calendar')" class="text-[10px] text-brand-400 hover:underline flex items-center gap-1 font-bold">
-                    変更 <i class="fa-solid fa-arrow-right-arrow-left text-[9px]"></i>
-                </button>
+            <div id="exercise-list" class="space-y-4">
+                <!-- JavaScriptで種目がここに追加されます -->
             </div>
 
-            <!-- Daily Total Volume Banner -->
-            <div class="bg-gradient-to-r from-slate-800 to-slate-800/95 p-4 rounded-2xl border border-brand-500/30 shadow-md flex justify-between items-center relative overflow-hidden">
-                <div class="absolute -right-3 -bottom-3 text-brand-500/10 text-6xl font-black pointer-events-none">
-                    <i class="fa-solid fa-weight-hanging"></i>
-                </div>
-                <div>
-                    <div class="text-[10px] font-bold text-brand-400 uppercase tracking-widest flex items-center gap-1">
-                        <i class="fa-solid fa-fire text-amber-400"></i> 本日の総ボリューム
-                    </div>
-                    <div class="text-3xl font-black text-white font-mono mt-0.5">
-                        <span id="daily-total-volume">0</span> <span class="text-xs font-bold text-slate-400">kg</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Copy Menu Button -->
-            <button onclick="openCopyDateModal()" class="w-full py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700/80 text-slate-200 font-bold flex items-center justify-center gap-2 transition text-xs border border-slate-700/80 shadow-sm active:scale-98">
-                <i class="fa-solid fa-copy text-amber-400"></i> 過去の記録からメニューをコピー
+            <button id="btn-add-exercise" class="mt-6 w-full bg-slate-700 hover:bg-slate-600 text-white py-3 rounded-lg font-bold transition-colors">
+                ＋ 種目を追加
             </button>
-
-            <!-- Exercises List Container -->
-            <div id="workout-exercise-list-container" class="space-y-3">
-                <!-- Dynamically populated exercise cards -->
-            </div>
-
-            <!-- Add Exercise Button -->
-            <button onclick="openSelectExerciseModal()" class="w-full py-3 bg-slate-800/90 hover:bg-slate-800 border-2 border-dashed border-slate-700 hover:border-brand-500 text-brand-400 font-bold rounded-2xl flex items-center justify-center gap-2 text-xs transition shadow-sm active:scale-98">
-                <i class="fa-solid fa-circle-plus text-sm"></i> 保存済みの種目を追加
-            </button>
-
-            <!-- Workout Complete Button -->
-            <div class="pt-2">
-                <button onclick="openWorkoutMemoModal()" class="w-full py-3.5 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 active:scale-98 text-white font-black rounded-2xl flex items-center justify-center gap-2 text-sm shadow-lg shadow-emerald-500/20 transition">
-                    <i class="fa-solid fa-flag-checkered text-base"></i> トレーニング完了 (感想を記録)
-                </button>
-            </div>
-
-            <!-- Sticky Custom Numpad Input Box -->
-            <div id="numpad-container" class="hidden fixed bottom-16 left-0 right-0 max-w-md mx-auto bg-slate-800/95 backdrop-blur-md p-3 rounded-t-3xl border-t border-x border-slate-700 shadow-2xl space-y-2 z-50 transition-all duration-200">
-                <div class="flex justify-between items-center text-xs px-1">
-                    <div class="flex items-center gap-1.5 font-bold text-slate-300 truncate max-w-[150px]">
-                        <span id="active-target-label" class="px-2 py-0.5 rounded-md bg-brand-500/20 text-brand-400 text-[11px] truncate">種目 - SET 1</span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <div class="flex bg-slate-900/80 rounded-lg p-0.5 border border-slate-700">
-                            <button id="input-mode-weight" onclick="setInputMode('weight')" class="px-2.5 py-1 rounded-md text-xs font-bold transition bg-brand-500 text-white">
-                                重量: <span id="val-weight" class="font-mono">0.0</span>kg
-                            </button>
-                            <button id="input-mode-reps" onclick="setInputMode('reps')" class="px-2.5 py-1 rounded-md text-xs font-bold transition text-slate-400 hover:text-white">
-                                回数: <span id="val-reps" class="font-mono">0</span>回
-                            </button>
-                        </div>
-                        <button onclick="hideNumpad()" class="w-7 h-7 flex items-center justify-center bg-slate-700/80 rounded-full text-slate-300 hover:text-white hover:bg-slate-600 transition">
-                            <i class="fa-solid fa-chevron-down text-xs"></i>
-                        </button>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-4 gap-1.5 text-center font-mono font-bold text-base">
-                    <button onclick="pressKey('7')" class="keypad-btn bg-slate-700/80 active:bg-brand-500 py-2 rounded-xl text-slate-100">7</button>
-                    <button onclick="pressKey('8')" class="keypad-btn bg-slate-700/80 active:bg-brand-500 py-2 rounded-xl text-slate-100">8</button>
-                    <button onclick="pressKey('9')" class="keypad-btn bg-slate-700/80 active:bg-brand-500 py-2 rounded-xl text-slate-100">9</button>
-                    <button onclick="pressKey('backspace')" class="keypad-btn bg-slate-700/40 text-rose-400 py-2 rounded-xl"><i class="fa-solid fa-backspace"></i></button>
-
-                    <button onclick="pressKey('4')" class="keypad-btn bg-slate-700/80 active:bg-brand-500 py-2 rounded-xl text-slate-100">4</button>
-                    <button onclick="pressKey('5')" class="keypad-btn bg-slate-700/80 active:bg-brand-500 py-2 rounded-xl text-slate-100">5</button>
-                    <button onclick="pressKey('6')" class="keypad-btn bg-slate-700/80 active:bg-brand-500 py-2 rounded-xl text-slate-100">6</button>
-                    <button onclick="pressKey('+2.5')" class="keypad-btn bg-slate-700/40 text-amber-400 py-2 rounded-xl text-xs font-sans font-bold">+2.5</button>
-
-                    <button onclick="pressKey('1')" class="keypad-btn bg-slate-700/80 active:bg-brand-500 py-2 rounded-xl text-slate-100">1</button>
-                    <button onclick="pressKey('2')" class="keypad-btn bg-slate-700/80 active:bg-brand-500 py-2 rounded-xl text-slate-100">2</button>
-                    <button onclick="pressKey('3')" class="keypad-btn bg-slate-700/80 active:bg-brand-500 py-2 rounded-xl text-slate-100">3</button>
-                    <button onclick="pressKey('-2.5')" class="keypad-btn bg-slate-700/40 text-amber-400 py-2 rounded-xl text-xs font-sans font-bold">-2.5</button>
-
-                    <button onclick="pressKey('0')" class="keypad-btn bg-slate-700/80 active:bg-brand-500 py-2 rounded-xl text-slate-100">0</button>
-                    <button onclick="pressKey('.')" class="keypad-btn bg-slate-700/80 active:bg-brand-500 py-2 rounded-xl text-slate-100">.</button>
-                    <button onclick="pressKey('C')" class="keypad-btn bg-slate-700/40 text-slate-400 py-2 rounded-xl text-xs font-sans font-bold">C</button>
-                    <button onclick="completeCurrentSet()" class="bg-gradient-to-r from-brand-500 to-amber-500 hover:from-brand-600 hover:to-amber-600 text-white py-2 rounded-xl font-sans font-black text-xs flex items-center justify-center shadow-lg shadow-brand-500/20 active:scale-95 transition">
-                        完了 <i class="fa-solid fa-check ml-1"></i>
-                    </button>
-                </div>
-            </div>
-        </section>
-
-        <!-- VIEW 3: TIMER VIEW -->
-        <section id="view-timer" class="hidden space-y-4">
-            <div class="bg-slate-800 p-5 rounded-2xl border border-slate-700/80 shadow-lg text-center space-y-4">
-                <div class="flex justify-between items-center">
-                    <div class="flex items-center gap-2 text-amber-400 font-bold text-xs">
-                        <i class="fa-solid fa-stopwatch text-base"></i> 連続インターバルタイマー
-                    </div>
-                    <div id="timer-phase-badge" class="px-2.5 py-0.5 rounded-full bg-slate-700 text-[10px] font-bold text-slate-300">
-                        待機中
-                    </div>
-                </div>
-
-                <div class="flex justify-center items-center text-xs font-mono font-bold text-slate-300 bg-slate-900/60 py-2 rounded-xl border border-slate-700/50">
-                    <div>SET: <span id="timer-current-set" class="text-brand-400 text-sm">1</span> / <span id="timer-total-sets" class="text-slate-400">4</span></div>
-                </div>
-                
-                <div id="timer-standalone-display" class="text-6xl font-black font-mono text-white tracking-wider my-2">
-                    00:30
-                </div>
-
-                <div class="w-full bg-slate-900 rounded-full h-2 overflow-hidden">
-                    <div id="timer-standalone-progress" class="bg-gradient-to-r from-amber-500 to-brand-500 h-full w-full transition-all duration-1000"></div>
-                </div>
-
-                <div class="flex justify-center gap-3 pt-2">
-                    <button id="timer-toggle-btn" onclick="toggleStandaloneTimer()" class="px-6 py-3 rounded-xl bg-brand-500 hover:bg-brand-600 text-white font-bold text-sm transition shadow-lg shadow-brand-500/20 active:scale-95">
-                        <i class="fa-solid fa-play mr-1.5"></i> スタート
-                    </button>
-                    <button onclick="resetStandaloneTimer()" class="px-4 py-3 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold text-sm transition active:scale-95">
-                        <i class="fa-solid fa-rotate-right"></i> リセット
-                    </button>
-                </div>
-            </div>
-
-            <!-- Custom Timer Settings Card -->
-            <div class="bg-slate-800 p-4 rounded-2xl border border-slate-700 space-y-3">
-                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                    <i class="fa-solid fa-sliders text-brand-400"></i> タイマー設定
-                </h3>
-                <div class="grid grid-cols-3 gap-1.5 text-xs">
-                    <div class="bg-slate-900 p-2 rounded-xl border border-slate-700/80">
-                        <label class="text-slate-400 font-bold block mb-1 text-[10px] whitespace-nowrap">運動(秒)</label>
-                        <input type="number" id="timer-work-sec" value="30" min="1" onchange="updateTimerSettingsFromInputs()" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-1.5 py-1 text-white font-mono font-bold text-sm">
-                    </div>
-                    <div class="bg-slate-900 p-2 rounded-xl border border-slate-700/80">
-                        <label class="text-slate-400 font-bold block mb-1 text-[10px] whitespace-nowrap">休憩(秒)</label>
-                        <input type="number" id="timer-rest-sec" value="15" min="0" onchange="updateTimerSettingsFromInputs()" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-1.5 py-1 text-white font-mono font-bold text-sm">
-                    </div>
-                    <div class="bg-slate-900 p-2 rounded-xl border border-slate-700/80">
-                        <label class="text-slate-400 font-bold block mb-1 text-[10px] whitespace-nowrap">セット数</label>
-                        <input type="number" id="timer-sets-count" value="4" min="1" onchange="updateTimerSettingsFromInputs()" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-1.5 py-1 text-white font-mono font-bold text-sm">
-                    </div>
-                </div>
-
-                <div class="pt-2 border-t border-slate-700/60 flex gap-2">
-                    <input type="text" id="preset-name-input" placeholder="プリセット名 (例: HIIT用, 胸トレ用)" class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
-                    <button onclick="saveCurrentTimerAsPreset()" class="bg-amber-500 hover:bg-amber-600 active:scale-95 text-white font-bold px-3 py-2 rounded-xl text-xs flex items-center gap-1 shadow-md transition whitespace-nowrap">
-                        <i class="fa-solid fa-bookmark"></i> プリセット保存
-                    </button>
-                </div>
-            </div>
-
-            <!-- Custom Saved Presets Section -->
-            <div class="bg-slate-800 p-4 rounded-2xl border border-slate-700 space-y-2">
-                <h3 class="text-xs font-bold text-slate-400 uppercase">保存済みマイプリセット</h3>
-                <div id="timer-custom-presets-list" class="space-y-2">
-                    <!-- Dynamically populated custom presets -->
-                </div>
-            </div>
-        </section>
-
-        <!-- VIEW 4: ANALYTICS / GRAPH -->
-        <section id="view-analytics" class="hidden space-y-4">
-            <div class="flex justify-between items-center">
-                <h2 class="text-lg font-bold text-white">成長分析</h2>
-                <select id="chart-exercise-select" onchange="renderChart()" class="bg-slate-800 border border-slate-700 text-xs font-bold text-white px-3 py-1.5 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500">
-                    <!-- Exercies filled dynamically -->
-                </select>
-            </div>
-
-            <!-- Metric Selector Switch -->
-            <div class="grid grid-cols-4 gap-1 bg-slate-800 p-1 rounded-xl border border-slate-700 text-[11px] font-bold text-center">
-                <button onclick="setChartMetric('weight')" id="m-weight" class="py-1.5 rounded-lg bg-brand-500 text-white">重量</button>
-                <button onclick="setChartMetric('volume')" id="m-volume" class="py-1.5 rounded-lg text-slate-400">総量</button>
-                <button onclick="setChartMetric('1rm')" id="m-1rm" class="py-1.5 rounded-lg text-slate-400">推定1RM</button>
-                <button onclick="setChartMetric('reps')" id="m-reps" class="py-1.5 rounded-lg text-slate-400">回数</button>
-            </div>
-
-            <!-- Chart Canvas -->
-            <div class="bg-slate-800 p-4 rounded-2xl border border-slate-700 shadow-md">
-                <canvas id="growthChart" class="w-full h-64"></canvas>
-            </div>
-
-            <!-- Key PR Stats -->
-            <div class="grid grid-cols-2 gap-3">
-                <div class="bg-slate-800 p-3 rounded-xl border border-slate-700">
-                    <div class="text-[10px] font-bold text-slate-400 uppercase">最高重量 (MAX WEIGHT)</div>
-                    <div id="pr-max-weight" class="text-xl font-black text-amber-400 font-mono mt-1">0 <span class="text-xs font-normal text-slate-400">kg</span></div>
-                </div>
-                <div class="bg-slate-800 p-3 rounded-xl border border-slate-700">
-                    <div class="text-[10px] font-bold text-slate-400 uppercase">推定1RM MAX</div>
-                    <div id="pr-max-1rm" class="text-xl font-black text-brand-400 font-mono mt-1">0 <span class="text-xs font-normal text-slate-400">kg</span></div>
-                </div>
-            </div>
-        </section>
-
-        <!-- VIEW 5: SETTINGS -->
-        <section id="view-settings" class="hidden space-y-4">
-            <h2 class="text-lg font-bold text-white">設定 & 身体データ</h2>
-
-            <!-- Body Metrics Card -->
-            <div class="bg-slate-800 p-4 rounded-2xl border border-slate-700 space-y-3">
-                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider">身体データ管理</h3>
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="text-xs text-slate-300">現在の体重 (kg)</label>
-                        <input type="number" id="user-weight" value="70.0" step="0.1" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm font-bold text-white mt-1">
-                    </div>
-                    <div>
-                        <label class="text-xs text-slate-300">体脂肪率 (%)</label>
-                        <input type="number" id="user-fat" value="15.0" step="0.1" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm font-bold text-white mt-1">
-                    </div>
-                </div>
-                <button onclick="saveBodyData()" class="w-full bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 rounded-xl text-xs transition">
-                    保存する
-                </button>
-            </div>
-
-            <!-- Custom Exercise Management -->
-            <div class="bg-slate-800 p-4 rounded-2xl border border-slate-700 space-y-3">
-                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider">種目カスタマイズ登録</h3>
-                <div class="space-y-2">
-                    <input type="text" id="new-ex-name" placeholder="例: インクラインチェストプレス" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
-                    <div class="grid grid-cols-2 gap-2">
-                        <select id="new-ex-part" class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
-                            <option value="胸">胸</option>
-                            <option value="背中">背中</option>
-                            <option value="脚">脚</option>
-                            <option value="肩">肩</option>
-                            <option value="腕">腕</option>
-                            <option value="腹筋">腹筋</option>
-                        </select>
-                        <input type="number" id="new-ex-bw" placeholder="自重負荷率(%) 例:95" class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
-                    </div>
-                    <input type="text" id="new-ex-youtube" placeholder="YouTube動画URL または 動画ID (任意)" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
-                    <button onclick="addNewExercise()" class="w-full bg-brand-500 hover:bg-brand-600 text-white font-bold py-2 rounded-xl text-xs shadow-md transition">
-                        + 新しい種目を追加登録
-                    </button>
-                </div>
-            </div>
-
-            <!-- System Data Clear -->
-            <div class="bg-slate-800 p-4 rounded-2xl border border-slate-700 space-y-3 text-xs">
-                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider">システム</h3>
-                <div class="flex justify-between items-center py-1">
-                    <button onclick="clearAllData()" class="text-rose-400 font-bold hover:underline">データの初期化</button>
-                    <span class="text-[10px] text-slate-500">Ver 1.2.0</span>
-                </div>
-            </div>
         </section>
 
     </main>
 
-    <!-- BOTTOM NAVIGATION BAR -->
-    <nav class="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-slate-800/95 backdrop-blur-md border-t border-slate-700/80 z-40 px-2 py-1.5 flex justify-around items-center">
-        <button onclick="switchView('calendar')" id="nav-calendar" class="flex flex-col items-center p-1.5 text-brand-500 transition">
-            <i class="fa-solid fa-calendar-days text-lg"></i>
-            <span class="text-[10px] font-bold mt-0.5">カレンダー</span>
+    <!-- ボトムナビゲーション -->
+    <nav class="fixed bottom-0 w-full bg-slate-800 border-t border-slate-700 flex justify-around p-3 pb-safe shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.3)]">
+        <button id="nav-calendar" class="nav-btn flex flex-col items-center text-brand-500">
+            <span class="text-xs font-bold mt-1">Calendar</span>
         </button>
-        <button onclick="switchView('workout')" id="nav-workout" class="flex flex-col items-center p-1.5 text-slate-400 hover:text-slate-200 transition">
-            <i class="fa-solid fa-dumbbell text-lg"></i>
-            <span class="text-[10px] font-bold mt-0.5">トレーニング</span>
-        </button>
-        <button onclick="switchView('timer')" id="nav-timer" class="flex flex-col items-center p-1.5 text-slate-400 hover:text-slate-200 transition">
-            <i class="fa-solid fa-stopwatch text-lg"></i>
-            <span class="text-[10px] font-bold mt-0.5">タイマー</span>
-        </button>
-        <button onclick="switchView('analytics')" id="nav-analytics" class="flex flex-col items-center p-1.5 text-slate-400 hover:text-slate-200 transition">
-            <i class="fa-solid fa-chart-line text-lg"></i>
-            <span class="text-[10px] font-bold mt-0.5">分析</span>
-        </button>
-        <button onclick="switchView('settings')" id="nav-settings" class="flex flex-col items-center p-1.5 text-slate-400 hover:text-slate-200 transition">
-            <i class="fa-solid fa-gear text-lg"></i>
-            <span class="text-[10px] font-bold mt-0.5">設定</span>
+        <button id="nav-workout" class="nav-btn flex flex-col items-center text-slate-400">
+            <span class="text-xs font-bold mt-1">Workout</span>
         </button>
     </nav>
 
-    <!-- MODALS -->
-    <!-- Exercise Select Modal -->
-    <div id="modal-select-exercise" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-        <div class="bg-slate-800 border border-slate-700 w-full max-w-sm rounded-2xl p-4 space-y-3 max-h-[80vh] flex flex-col">
-            <div class="flex justify-between items-center border-b border-slate-700/60 pb-2">
-                <h3 class="font-bold text-white text-sm"><i class="fa-solid fa-dumbbell text-brand-500 mr-2"></i>追加する種目を選択</h3>
-                <button onclick="toggleModal('select-exercise')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-
-            <!-- Filter Categories -->
-            <div id="exercise-part-filters" class="flex gap-1 overflow-x-auto pb-1 hide-scrollbar text-[11px] font-bold">
-                <button onclick="filterMasterExercises('ALL')" class="part-filter-btn active px-3 py-1 rounded-full bg-brand-500 text-white whitespace-nowrap">すべて</button>
-                <button onclick="filterMasterExercises('胸')" class="part-filter-btn px-3 py-1 rounded-full bg-slate-700 text-slate-300 hover:bg-slate-600 whitespace-nowrap">胸</button>
-                <button onclick="filterMasterExercises('背中')" class="part-filter-btn px-3 py-1 rounded-full bg-slate-700 text-slate-300 hover:bg-slate-600 whitespace-nowrap">背中</button>
-                <button onclick="filterMasterExercises('脚')" class="part-filter-btn px-3 py-1 rounded-full bg-slate-700 text-slate-300 hover:bg-slate-600 whitespace-nowrap">脚</button>
-                <button onclick="filterMasterExercises('肩')" class="part-filter-btn px-3 py-1 rounded-full bg-slate-700 text-slate-300 hover:bg-slate-600 whitespace-nowrap">肩</button>
-                <button onclick="filterMasterExercises('腕')" class="part-filter-btn px-3 py-1 rounded-full bg-slate-700 text-slate-300 hover:bg-slate-600 whitespace-nowrap">腕</button>
-                <button onclick="filterMasterExercises('腹筋')" class="part-filter-btn px-3 py-1 rounded-full bg-slate-700 text-slate-300 hover:bg-slate-600 whitespace-nowrap">腹筋</button>
-            </div>
-
-            <!-- Master Exercise List -->
-            <div id="master-exercise-list" class="flex-1 overflow-y-auto space-y-2 pr-1 my-1">
-                <!-- Dynamically filled -->
-            </div>
-
-            <button onclick="toggleModal('select-exercise'); switchView('settings');" class="w-full py-2 bg-slate-700/70 hover:bg-slate-700 border border-slate-600/80 text-slate-300 font-bold rounded-xl text-xs transition flex items-center justify-center gap-1.5">
-                <i class="fa-solid fa-plus text-brand-400"></i> 新しい種目を登録・作成
-            </button>
-        </div>
-    </div>
-
-    <!-- Copy Date Modal -->
-    <div id="modal-copy-date" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-        <div class="bg-slate-800 border border-slate-700 w-full max-w-sm rounded-2xl p-4 space-y-3 max-h-[80vh] flex flex-col">
-            <div class="flex justify-between items-center border-b border-slate-700/60 pb-2">
-                <h3 class="font-bold text-white text-sm"><i class="fa-solid fa-copy text-amber-400 mr-2"></i>過去の記録からコピー</h3>
-                <button onclick="toggleModal('copy-date')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-            <div id="copy-date-list" class="flex-1 overflow-y-auto space-y-2 pr-1 my-1">
-                <!-- Dynamically populated -->
-            </div>
-        </div>
-    </div>
-
-    <!-- WORKOUT MEMO & COMPLETE MODAL -->
-    <div id="modal-workout-memo" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-        <div class="bg-slate-800 border border-slate-700 w-full max-w-sm rounded-2xl p-4 space-y-3">
-            <div class="flex justify-between items-center border-b border-slate-700/60 pb-2">
-                <h3 class="font-bold text-white text-sm flex items-center gap-2">
-                    <i class="fa-solid fa-trophy text-amber-400"></i> トレーニング完了・感想
-                </h3>
-                <button onclick="toggleModal('workout-memo')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-            
-            <p class="text-xs text-slate-300">本日のトレーニングの感想やコンディションを記録して完了します。</p>
-            
-            <textarea id="workout-memo-input" rows="4" placeholder="例: パンプ感が良かった！ベンチプレスの重量を＋2.5kg更新できた。" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500"></textarea>
-
-            <div class="flex gap-2 pt-1">
-                <button onclick="toggleModal('workout-memo')" class="flex-1 py-2.5 bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold rounded-xl text-xs transition">
-                    キャンセル
-                </button>
-                <button onclick="saveWorkoutMemoAndFinish()" class="flex-1 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-black rounded-xl text-xs shadow-md transition">
-                    保存して記録完了
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Edit Timer Preset Modal -->
-    <div id="modal-edit-preset" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-        <div class="bg-slate-800 border border-slate-700 w-full max-w-sm rounded-2xl p-4 space-y-3">
-            <div class="flex justify-between items-center border-b border-slate-700/60 pb-2">
-                <h3 class="font-bold text-white text-sm flex items-center gap-2">
-                    <i class="fa-solid fa-pen-to-square text-amber-400"></i> プリセットの編集
-                </h3>
-                <button onclick="toggleModal('edit-preset')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-            <input type="hidden" id="edit-preset-id">
-            <div class="space-y-2 text-xs">
-                <div>
-                    <label class="text-slate-400 font-bold block mb-1">プリセット名</label>
-                    <input type="text" id="edit-preset-name" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white">
-                </div>
-                <div class="grid grid-cols-3 gap-2">
-                    <div>
-                        <label class="text-slate-400 font-bold block mb-1">運動(秒)</label>
-                        <input type="number" id="edit-preset-work" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-2 text-white font-mono">
-                    </div>
-                    <div>
-                        <label class="text-slate-400 font-bold block mb-1">休憩(秒)</label>
-                        <input type="number" id="edit-preset-rest" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-2 text-white font-mono">
-                    </div>
-                    <div>
-                        <label class="text-slate-400 font-bold block mb-1">セット数</label>
-                        <input type="number" id="edit-preset-sets" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-2 text-white font-mono">
-                    </div>
-                </div>
-            </div>
-            <div class="flex gap-2 pt-2">
-                <button onclick="toggleModal('edit-preset')" class="flex-1 py-2 bg-slate-700 text-slate-300 font-bold rounded-xl text-xs">キャンセル</button>
-                <button onclick="saveEditedPreset()" class="flex-1 py-2 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl text-xs shadow-md">更新</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- JAVASCRIPT APP LOGIC -->
-    <script>
-        // --- APP STATE & STORAGE ---
-        const DEFAULT_EXERCISES = [
-            { name: "ベンチプレス", part: "胸", bwRatio: 0, youtube: "" },
-            { name: "インクラインダンベルプレス", part: "胸", bwRatio: 0, youtube: "" },
-            { name: "懸垂 (チンニング)", part: "背中", bwRatio: 100, youtube: "" },
-            { name: "ラットプルダウン", part: "背中", bwRatio: 0, youtube: "" },
-            { name: "スクワット", part: "脚", bwRatio: 0, youtube: "" },
-            { name: "レッグプレス", part: "脚", bwRatio: 0, youtube: "" },
-            { name: "ショルダープレス", part: "肩", bwRatio: 0, youtube: "" },
-            { name: "サイドレイズ", part: "肩", bwRatio: 0, youtube: "" },
-            { name: "アームカール", part: "腕", bwRatio: 0, youtube: "" },
-            { name: "アブローラー", part: "腹筋", bwRatio: 50, youtube: "" }
-        ];
-
-        const DEFAULT_PRESETS = [
-            { id: "p1", name: "HIIT基本", work: 30, rest: 15, sets: 4 },
-            { id: "p2", name: "インターバル短め", work: 45, rest: 15, sets: 3 },
-            { id: "p3", name: "筋肥大レスト (90秒)", work: 0, rest: 90, sets: 3 }
-        ];
-
-        let state = {
-            currentDate: getTodayString(),
-            selectedDate: getTodayString(),
-            currentView: 'calendar',
-            workouts: JSON.parse(localStorage.getItem('ironlog_workouts') || '{}'),
-            exercises: JSON.parse(localStorage.getItem('ironlog_exercises') || JSON.stringify(DEFAULT_EXERCISES)),
-            presets: JSON.parse(localStorage.getItem('ironlog_presets') || JSON.stringify(DEFAULT_PRESETS)),
-            body: JSON.parse(localStorage.getItem('ironlog_body') || '{"weight": 70.0, "fat": 15.0}'),
-            
-            // Active Numpad Input State
-            numpad: {
-                activeExIndex: null,
-                activeSetIndex: null,
-                mode: 'weight', // 'weight' or 'reps'
-                buffer: ''
-            },
-
-            // Standalone Timer State
-            timer: {
-                workSec: 30,
-                restSec: 15,
-                totalSets: 4,
-                currentSet: 1,
-                phase: 'idle', // 'idle', 'work', 'rest'
-                timeLeft: 30,
-                intervalId: null
-            },
-
-            chartMetric: 'weight'
-        };
-
-        function getTodayString() {
-            const today = new Date();
-            const year = today.getFullYear();
-            const month = String(today.getMonth() + 1).padStart(2, '0');
-            const day = String(today.getDate()).padStart(2, '0');
-            return `${year}-${month}-${day}`;
-        }
-
-        function saveWorkouts() {
-            localStorage.setItem('ironlog_workouts', JSON.stringify(state.workouts));
-        }
-
-        function saveExercises() {
-            localStorage.setItem('ironlog_exercises', JSON.stringify(state.exercises));
-        }
-
-        function savePresets() {
-            localStorage.setItem('ironlog_presets', JSON.stringify(state.presets));
-        }
-
-        // --- INITIALIZATION ---
-        window.addEventListener('DOMContentLoaded', () => {
-            initCalendar();
-            renderSelectedDateCard();
-            renderPresets();
-            renderMasterExercisesList();
-            
-            // Load body data into settings
-            document.getElementById('user-weight').value = state.body.weight || 70.0;
-            document.getElementById('user-fat').value = state.body.fat || 15.0;
-        });
-
-        // --- NAVIGATION ---
-        function switchView(viewName) {
-            state.currentView = viewName;
-            ['calendar', 'workout', 'timer', 'analytics', 'settings'].forEach(v => {
-                const el = document.getElementById(`view-${v}`);
-                const nav = document.getElementById(`nav-${v}`);
-                if (v === viewName) {
-                    el.classList.remove('hidden');
-                    nav.classList.add('text-brand-500');
-                    nav.classList.remove('text-slate-400');
-                } else {
-                    el.classList.add('hidden');
-                    nav.classList.remove('text-brand-500');
-                    nav.classList.add('text-slate-400');
-                }
-            });
-
-            if (viewName === 'workout') {
-                renderWorkoutView();
-            } else if (viewName === 'analytics') {
-                populateChartExerciseSelect();
-                renderChart();
-            } else if (viewName === 'calendar') {
-                renderCalendar();
-                renderSelectedDateCard();
-            }
-        }
-
-        function toggleModal(modalId) {
-            const el = document.getElementById(`modal-${modalId}`);
-            if (el) el.classList.toggle('hidden');
-        }
-
-        // --- CALENDAR LOGIC ---
-        let currentCalendarDate = new Date();
-
-        function initCalendar() {
-            renderCalendar();
-        }
-
-        function renderCalendar() {
-            const year = currentCalendarDate.getFullYear();
-            const month = currentCalendarDate.getMonth();
-            document.getElementById('calendar-month-year').textContent = `${year}年 ${month + 1}月`;
-
-            const firstDay = new Date(year, month, 1).getDay();
-            const lastDate = new Date(year, month + 1, 0).getDate();
-
-            const grid = document.getElementById('calendar-days');
-            grid.innerHTML = '';
-
-            // Blank slots for previous month
-            for (let i = 0; i < firstDay; i++) {
-                const blank = document.createElement('div');
-                grid.appendChild(blank);
-            }
-
-            for (let day = 1; day <= lastDate; day++) {
-                const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                const btn = document.createElement('button');
-                btn.className = `p-2 rounded-xl flex flex-col items-center justify-center font-mono font-bold transition text-xs border ${dateStr === state.selectedDate ? 'bg-brand-500/20 border-brand-500 text-brand-400' : 'bg-slate-800/80 border-slate-700/60 hover:bg-slate-700'}`;
-                
-                const hasWorkout = state.workouts[dateStr] && state.workouts[dateStr].exercises && state.workouts[dateStr].exercises.length > 0;
-                
-                btn.innerHTML = `
-                    <span>${day}</span>
-                    <span class="w-1.5 h-1.5 rounded-full mt-0.5 ${hasWorkout ? 'bg-amber-400 shadow-sm shadow-amber-400' : 'bg-transparent'}"></span>
-                `;
-
-                btn.onclick = () => {
-                    state.selectedDate = dateStr;
-                    renderCalendar();
-                    renderSelectedDateCard();
-                };
-
-                grid.appendChild(btn);
-            }
-        }
-
-        function changeMonth(delta) {
-            currentCalendarDate.setMonth(currentCalendarDate.getMonth() + delta);
-            renderCalendar();
-        }
-
-        function renderSelectedDateCard() {
-            document.getElementById('selected-date-display').textContent = state.selectedDate;
-            const record = state.workouts[state.selectedDate];
-            const statusEl = document.getElementById('selected-date-status');
-            const memoCard = document.getElementById('selected-date-memo-card');
-            const memoText = document.getElementById('selected-date-memo-text');
-
-            if (record && record.exercises && record.exercises.length > 0) {
-                const exNames = record.exercises.map(e => e.name).join(', ');
-                statusEl.textContent = `${record.exercises.length}種目: ${exNames}`;
-                statusEl.className = "text-xs text-amber-400 font-bold mt-0.5 truncate max-w-[200px]";
-            } else {
-                statusEl.textContent = "記録なし";
-                statusEl.className = "text-xs text-slate-400 mt-0.5";
-            }
-
-            if (record && record.memo && record.memo.trim() !== '') {
-                memoCard.classList.remove('hidden');
-                memoText.textContent = record.memo;
-            } else {
-                memoCard.classList.add('hidden');
-            }
-        }
-
-        function startWorkoutForSelectedDate() {
-            switchView('workout');
-        }
-
-        // --- WORKOUT RECORDING LOGIC ---
-        function renderWorkoutView() {
-            document.getElementById('workout-active-date').textContent = state.selectedDate;
-            const record = state.workouts[state.selectedDate] || { exercises: [], memo: '' };
-            const container = document.getElementById('workout-exercise-list-container');
-            container.innerHTML = '';
-
-            let totalVolume = 0;
-
-            if (record.exercises.length === 0) {
-                container.innerHTML = `
-                    <div class="text-center py-8 text-slate-500 text-xs">
-                        <i class="fa-solid fa-dumbbell text-3xl mb-2 text-slate-600 block"></i>
-                        種目がまだ追加されていません。「保存済みの種目を追加」から選択してください。
-                    </div>
-                `;
-            } else {
-                record.exercises.forEach((ex, exIdx) => {
-                    const card = document.createElement('div');
-                    card.className = "bg-slate-800 p-3.5 rounded-2xl border border-slate-700/80 shadow-md space-y-3";
-
-                    let setsHtml = '';
-                    ex.sets.forEach((st, setIdx) => {
-                        const setVol = (parseFloat(st.weight) || 0) * (parseInt(st.reps) || 0);
-                        if (st.completed) totalVolume += setVol;
-
-                        setsHtml += `
-                            <div class="flex items-center justify-between text-xs py-1 px-2 rounded-xl bg-slate-900/60 border border-slate-700/50">
-                                <span class="font-bold text-slate-400 w-12">SET ${setIdx + 1}</span>
-                                <div class="flex items-center gap-2 flex-1 justify-center">
-                                    <button onclick="openNumpad(${exIdx}, ${setIdx}, 'weight')" class="bg-slate-800 px-3 py-1 rounded-lg border border-slate-700 font-mono font-bold text-slate-200 hover:border-brand-500">
-                                        ${st.weight || 0} <span class="text-[10px] text-slate-400 font-sans">kg</span>
-                                    </button>
-                                    <span class="text-slate-500">×</span>
-                                    <button onclick="openNumpad(${exIdx}, ${setIdx}, 'reps')" class="bg-slate-800 px-3 py-1 rounded-lg border border-slate-700 font-mono font-bold text-slate-200 hover:border-brand-500">
-                                        ${st.reps || 0} <span class="text-[10px] text-slate-400 font-sans">回</span>
-                                    </button>
-                                </div>
-                                <div class="flex items-center gap-2">
-                                    <button onclick="toggleSetComplete(${exIdx}, ${setIdx})" class="w-7 h-7 rounded-lg flex items-center justify-center transition ${st.completed ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/20' : 'bg-slate-800 text-slate-500 border border-slate-700'}">
-                                        <i class="fa-solid fa-check text-xs"></i>
-                                    </button>
-                                    <button onclick="removeSet(${exIdx}, ${setIdx})" class="text-slate-500 hover:text-rose-400 p-1">
-                                        <i class="fa-solid fa-xmark text-xs"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        `;
-                    });
-
-                    card.innerHTML = `
-                        <div class="flex justify-between items-center border-b border-slate-700/60 pb-2">
-                            <div class="flex items-center gap-2">
-                                <span class="px-2 py-0.5 rounded-md bg-brand-500/20 text-brand-400 text-[10px] font-bold">${ex.part || '胸'}</span>
-                                <h4 class="font-bold text-white text-sm">${ex.name}</h4>
-                            </div>
-                            <button onclick="removeExercise(${exIdx})" class="text-slate-500 hover:text-rose-400 text-xs p-1">
-                                <i class="fa-solid fa-trash-can"></i>
-                            </button>
-                        </div>
-                        <div class="space-y-1.5">
-                            ${setsHtml}
-                        </div>
-                        <button onclick="addSetToExercise(${exIdx})" class="w-full py-1.5 text-xs text-brand-400 font-bold bg-slate-900/40 hover:bg-slate-900 rounded-xl border border-slate-700/50 flex items-center justify-center gap-1">
-                            <i class="fa-solid fa-plus text-[10px]"></i> セットを追加
-                        </button>
-                    `;
-                    container.appendChild(card);
-                });
-            }
-
-            document.getElementById('daily-total-volume').textContent = totalVolume.toLocaleString();
-        }
-
-        function openSelectExerciseModal() {
-            toggleModal('select-exercise');
-        }
-
-        function filterMasterExercises(part) {
-            document.querySelectorAll('.part-filter-btn').forEach(btn => {
-                btn.classList.remove('bg-brand-500', 'text-white');
-                btn.classList.add('bg-slate-700', 'text-slate-300');
-            });
-            event.target.classList.add('bg-brand-500', 'text-white');
-            event.target.classList.remove('bg-slate-700', 'text-slate-300');
-            renderMasterExercisesList(part);
-        }
-
-        function renderMasterExercisesList(filterPart = 'ALL') {
-            const list = document.getElementById('master-exercise-list');
-            list.innerHTML = '';
-            
-            state.exercises.forEach(ex => {
-                if (filterPart !== 'ALL' && ex.part !== filterPart) return;
-
-                const item = document.createElement('button');
-                item.className = "w-full p-2.5 rounded-xl bg-slate-900/80 hover:bg-slate-700 border border-slate-700 text-left flex justify-between items-center transition";
-                item.onclick = () => {
-                    addExerciseToWorkout(ex.name, ex.part);
-                    toggleModal('select-exercise');
-                };
-                item.innerHTML = `
-                    <span class="font-bold text-xs text-white">${ex.name}</span>
-                    <span class="text-[10px] bg-slate-800 border border-slate-700 px-2 py-0.5 rounded text-slate-400">${ex.part}</span>
-                `;
-                list.appendChild(item);
-            });
-        }
-
-        function addExerciseToWorkout(name, part = '胸') {
-            if (!state.workouts[state.selectedDate]) {
-                state.workouts[state.selectedDate] = { exercises: [], memo: '' };
-            }
-            state.workouts[state.selectedDate].exercises.push({
-                name: name,
-                part: part,
-                sets: [{ weight: 60, reps: 10, completed: false }]
-            });
-            saveWorkouts();
-            renderWorkoutView();
-        }
-
-        function addSetToExercise(exIdx) {
-            const ex = state.workouts[state.selectedDate].exercises[exIdx];
-            const lastSet = ex.sets[ex.sets.length - 1] || { weight: 60, reps: 10 };
-            ex.sets.push({ weight: lastSet.weight, reps: lastSet.reps, completed: false });
-            saveWorkouts();
-            renderWorkoutView();
-        }
-
-        function toggleSetComplete(exIdx, setIdx) {
-            const st = state.workouts[state.selectedDate].exercises[exIdx].sets[setIdx];
-            st.completed = !st.completed;
-            saveWorkouts();
-            renderWorkoutView();
-        }
-
-        function removeSet(exIdx, setIdx) {
-            state.workouts[state.selectedDate].exercises[exIdx].sets.splice(setIdx, 1);
-            saveWorkouts();
-            renderWorkoutView();
-        }
-
-        function removeExercise(exIdx) {
-            state.workouts[state.selectedDate].exercises.splice(exIdx, 1);
-            saveWorkouts();
-            renderWorkoutView();
-        }
-
-        // --- NUMPAD LOGIC ---
-        function openNumpad(exIdx, setIdx, mode) {
-            state.numpad.activeExIndex = exIdx;
-            state.numpad.activeSetIndex = setIdx;
-            state.numpad.mode = mode;
-
-            const st = state.workouts[state.selectedDate].exercises[exIdx].sets[setIdx];
-            const exName = state.workouts[state.selectedDate].exercises[exIdx].name;
-            
-            document.getElementById('active-target-label').textContent = `${exName} - SET ${setIdx + 1}`;
-            document.getElementById('val-weight').textContent = st.weight || '0';
-            document.getElementById('val-reps').textContent = st.reps || '0';
-            
-            state.numpad.buffer = String(mode === 'weight' ? st.weight : st.reps);
-
-            setInputMode(mode);
-            document.getElementById('numpad-container').classList.remove('hidden');
-        }
-
-        function hideNumpad() {
-            document.getElementById('numpad-container').classList.add('hidden');
-        }
-
-        function setInputMode(mode) {
-            state.numpad.mode = mode;
-            const wBtn = document.getElementById('input-mode-weight');
-            const rBtn = document.getElementById('input-mode-reps');
-
-            if (mode === 'weight') {
-                wBtn.className = "px-2.5 py-1 rounded-md text-xs font-bold transition bg-brand-500 text-white";
-                rBtn.className = "px-2.5 py-1 rounded-md text-xs font-bold transition text-slate-400 hover:text-white";
-            } else {
-                rBtn.className = "px-2.5 py-1 rounded-md text-xs font-bold transition bg-brand-500 text-white";
-                wBtn.className = "px-2.5 py-1 rounded-md text-xs font-bold transition text-slate-400 hover:text-white";
-            }
-        }
-
-        function pressKey(key) {
-            if (state.numpad.activeExIndex === null) return;
-            
-            const st = state.workouts[state.selectedDate].exercises[state.numpad.activeExIndex].sets[state.numpad.activeSetIndex];
-
-            if (key === 'C') {
-                state.numpad.buffer = '';
-            } else if (key === 'backspace') {
-                state.numpad.buffer = state.numpad.buffer.slice(0, -1);
-            } else if (key === '+2.5' || key === '-2.5') {
-                const delta = parseFloat(key);
-                let currentVal = parseFloat(state.numpad.buffer || (state.numpad.mode === 'weight' ? st.weight : st.reps)) || 0;
-                currentVal = Math.max(0, currentVal + delta);
-                state.numpad.buffer = String(currentVal);
-            } else {
-                if (key === '.' && state.numpad.buffer.includes('.')) return;
-                state.numpad.buffer += key;
-            }
-
-            const val = state.numpad.buffer || '0';
-            if (state.numpad.mode === 'weight') {
-                st.weight = parseFloat(val) || 0;
-                document.getElementById('val-weight').textContent = val;
-            } else {
-                st.reps = parseInt(val) || 0;
-                document.getElementById('val-reps').textContent = val;
-            }
-
-            saveWorkouts();
-            renderWorkoutView();
-        }
-
-        function completeCurrentSet() {
-            if (state.numpad.activeExIndex !== null) {
-                const st = state.workouts[state.selectedDate].exercises[state.numpad.activeExIndex].sets[state.numpad.activeSetIndex];
-                st.completed = true;
-                saveWorkouts();
-                renderWorkoutView();
-            }
-            hideNumpad();
-        }
-
-        // --- COPY FROM HISTORY MODAL ---
-        function openCopyDateModal() {
-            const list = document.getElementById('copy-date-list');
-            list.innerHTML = '';
-            
-            const sortedDates = Object.keys(state.workouts).filter(d => d !== state.selectedDate && state.workouts[d].exercises && state.workouts[d].exercises.length > 0).sort().reverse();
-
-            if (sortedDates.length === 0) {
-                list.innerHTML = `<div class="text-center py-4 text-xs text-slate-500">コピー可能な過去の記録がありません</div>`;
-            } else {
-                sortedDates.forEach(d => {
-                    const rec = state.workouts[d];
-                    const btn = document.createElement('button');
-                    btn.className = "w-full p-2.5 rounded-xl bg-slate-900 border border-slate-700 text-left hover:bg-slate-700 transition";
-                    btn.onclick = () => {
-                        copyWorkoutFromDate(d);
-                        toggleModal('copy-date');
-                    };
-                    btn.innerHTML = `
-                        <div class="font-mono font-bold text-xs text-amber-400">${d}</div>
-                        <div class="text-[11px] text-slate-300 truncate mt-0.5">${rec.exercises.map(e => e.name).join(', ')}</div>
-                    `;
-                    list.appendChild(btn);
-                });
-            }
-            toggleModal('copy-date');
-        }
-
-        function copyWorkoutFromDate(sourceDate) {
-            const src = state.workouts[sourceDate];
-            if (!src) return;
-
-            const copiedExercises = src.exercises.map(ex => ({
-                name: ex.name,
-                part: ex.part,
-                sets: ex.sets.map(s => ({ weight: s.weight, reps: s.reps, completed: false }))
-            }));
-
-            state.workouts[state.selectedDate] = {
-                exercises: copiedExercises,
-                memo: ''
-            };
-            saveWorkouts();
-            renderWorkoutView();
-        }
-
-        // --- MEMO & FINISH WORKOUT ---
-        function openWorkoutMemoModal() {
-            const rec = state.workouts[state.selectedDate] || { memo: '' };
-            document.getElementById('workout-memo-input').value = rec.memo || '';
-            toggleModal('workout-memo');
-        }
-
-        function saveWorkoutMemoAndFinish() {
-            const memoText = document.getElementById('workout-memo-input').value;
-            if (!state.workouts[state.selectedDate]) {
-                state.workouts[state.selectedDate] = { exercises: [], memo: '' };
-            }
-            state.workouts[state.selectedDate].memo = memoText;
-            saveWorkouts();
-            toggleModal('workout-memo');
-            switchView('calendar');
-        }
-
-        // --- TIMER LOGIC ---
-        function updateTimerSettingsFromInputs() {
-            state.timer.workSec = parseInt(document.getElementById('timer-work-sec').value) || 0;
-            const restVal = document.getElementById('timer-rest-sec').value;
-            state.timer.restSec = restVal === '' ? 0 : (parseInt(restVal) || 0);
-            state.timer.totalSets = parseInt(document.getElementById('timer-sets-count').value) || 1;
-            resetStandaloneTimer();
-        }
-
-        function toggleStandaloneTimer() {
-            const btn = document.getElementById('timer-toggle-btn');
-            if (state.timer.intervalId) {
-                // Pause
-                clearInterval(state.timer.intervalId);
-                state.timer.intervalId = null;
-                btn.innerHTML = `<i class="fa-solid fa-play mr-1.5"></i> 再開`;
-                document.getElementById('timer-badge').classList.add('hidden');
-            } else {
-                // Start
-                if (state.timer.phase === 'idle') {
-                    state.timer.phase = state.timer.workSec > 0 ? 'work' : 'rest';
-                    state.timer.timeLeft = state.timer.phase === 'work' ? state.timer.workSec : state.timer.restSec;
-                }
-                btn.innerHTML = `<i class="fa-solid fa-pause mr-1.5"></i> 一時停止`;
-                document.getElementById('timer-badge').classList.remove('hidden');
-                
-                state.timer.intervalId = setInterval(tickTimer, 1000);
-            }
-            updateTimerDisplay();
-        }
-
-        function tickTimer() {
-            state.timer.timeLeft--;
-            if (state.timer.timeLeft < 0) {
-                playBeep();
-                if (state.timer.phase === 'work') {
-                    if (state.timer.restSec > 0) {
-                        state.timer.phase = 'rest';
-                        state.timer.timeLeft = state.timer.restSec;
-                    } else {
-                        advanceSet();
-                    }
-                } else if (state.timer.phase === 'rest') {
-                    advanceSet();
-                }
-            }
-            updateTimerDisplay();
-        }
-
-        function advanceSet() {
-            if (state.timer.currentSet < state.timer.totalSets) {
-                state.timer.currentSet++;
-                state.timer.phase = state.timer.workSec > 0 ? 'work' : 'rest';
-                state.timer.timeLeft = state.timer.phase === 'work' ? state.timer.workSec : state.timer.restSec;
-            } else {
-                // Timer finished
-                clearInterval(state.timer.intervalId);
-                state.timer.intervalId = null;
-                state.timer.phase = 'idle';
-                document.getElementById('timer-toggle-btn').innerHTML = `<i class="fa-solid fa-play mr-1.5"></i> スタート`;
-                document.getElementById('timer-badge').classList.add('hidden');
-                alert('タイマーが完了しました！お疲れ様でした。');
-            }
-        }
-
-        function resetStandaloneTimer() {
-            if (state.timer.intervalId) {
-                clearInterval(state.timer.intervalId);
-                state.timer.intervalId = null;
-            }
-            state.timer.currentSet = 1;
-            state.timer.phase = 'idle';
-            state.timer.timeLeft = state.timer.workSec > 0 ? state.timer.workSec : state.timer.restSec;
-            document.getElementById('timer-toggle-btn').innerHTML = `<i class="fa-solid fa-play mr-1.5"></i> スタート`;
-            document.getElementById('timer-badge').classList.add('hidden');
-            updateTimerDisplay();
-        }
-
-        function updateTimerDisplay() {
-            const mins = String(Math.floor(state.timer.timeLeft / 60)).padStart(2, '0');
-            const secs = String(state.timer.timeLeft % 60).padStart(2, '0');
-            const timeStr = `${mins}:${secs}`;
-
-            document.getElementById('timer-standalone-display').textContent = timeStr;
-            document.getElementById('timer-display').textContent = timeStr;
-            document.getElementById('timer-current-set').textContent = state.timer.currentSet;
-            document.getElementById('timer-total-sets').textContent = state.timer.totalSets;
-
-            const badge = document.getElementById('timer-phase-badge');
-            if (state.timer.phase === 'work') {
-                badge.textContent = '運動中';
-                badge.className = 'px-2.5 py-0.5 rounded-full bg-rose-500/20 text-rose-400 font-bold border border-rose-500/30 text-[10px]';
-            } else if (state.timer.phase === 'rest') {
-                badge.textContent = '休憩中';
-                badge.className = 'px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-bold border border-emerald-500/30 text-[10px]';
-            } else {
-                badge.textContent = '待機中';
-                badge.className = 'px-2.5 py-0.5 rounded-full bg-slate-700 text-slate-300 font-bold text-[10px]';
-            }
-        }
-
-        function saveCurrentTimerAsPreset() {
-            const name = document.getElementById('preset-name-input').value.trim() || 'カスタムタイマー';
-            const newPreset = {
-                id: 'p_' + Date.now(),
-                name: name,
-                work: state.timer.workSec,
-                rest: state.timer.restSec,
-                sets: state.timer.totalSets
-            };
-            state.presets.push(newPreset);
-            savePresets();
-            renderPresets();
-            document.getElementById('preset-name-input').value = '';
-        }
-
-        function renderPresets() {
-            const container = document.getElementById('timer-custom-presets-list');
-            container.innerHTML = '';
-
-            state.presets.forEach(p => {
-                const card = document.createElement('div');
-                card.className = "flex justify-between items-center p-2.5 bg-slate-900 rounded-xl border border-slate-700/80 text-xs";
-                card.innerHTML = `
-                    <div>
-                        <div class="font-bold text-white">${p.name}</div>
-                        <div class="text-[10px] text-slate-400 font-mono mt-0.5">運動:${p.work}s | 休憩:${p.rest}s | ${p.sets}セット</div>
-                    </div>
-                    <div class="flex items-center gap-1.5">
-                        <button onclick="applyPreset('${p.id}')" class="px-2.5 py-1 bg-brand-500/20 text-brand-400 border border-brand-500/30 hover:bg-brand-500 hover:text-white rounded-lg font-bold transition">適用</button>
-                        <button onclick="openEditPresetModal('${p.id}')" class="p-1 text-slate-400 hover:text-amber-400"><i class="fa-solid fa-pen"></i></button>
-                        <button onclick="deletePreset('${p.id}')" class="p-1 text-slate-400 hover:text-rose-400"><i class="fa-solid fa-trash-can"></i></button>
-                    </div>
-                `;
-                container.appendChild(card);
-            });
-        }
-
-        function applyPreset(id) {
-            const p = state.presets.find(x => x.id === id);
-            if (!p) return;
-
-            document.getElementById('timer-work-sec').value = p.work;
-            document.getElementById('timer-rest-sec').value = p.rest;
-            document.getElementById('timer-sets-count').value = p.sets;
-            updateTimerSettingsFromInputs();
-        }
-
-        function deletePreset(id) {
-            state.presets = state.presets.filter(x => x.id !== id);
-            savePresets();
-            renderPresets();
-        }
-
-        function openEditPresetModal(id) {
-            const p = state.presets.find(x => x.id === id);
-            if (!p) return;
-            document.getElementById('edit-preset-id').value = p.id;
-            document.getElementById('edit-preset-name').value = p.name;
-            document.getElementById('edit-preset-work').value = p.work;
-            document.getElementById('edit-preset-rest').value = p.rest;
-            document.getElementById('edit-preset-sets').value = p.sets;
-            toggleModal('edit-preset');
-        }
-
-        function saveEditedPreset() {
-            const id = document.getElementById('edit-preset-id').value;
-            const p = state.presets.find(x => x.id === id);
-            if (p) {
-                p.name = document.getElementById('edit-preset-name').value;
-                p.work = parseInt(document.getElementById('edit-preset-work').value) || 0;
-                p.rest = parseInt(document.getElementById('edit-preset-rest').value) || 0;
-                p.sets = parseInt(document.getElementById('edit-preset-sets').value) || 1;
-                savePresets();
-                renderPresets();
-            }
-            toggleModal('edit-preset');
-        }
-
-        function playBeep() {
-            try {
-                const ctx = new (window.AudioContext || window.webkitAudioContext)();
-                const osc = ctx.createOscillator();
-                const gain = ctx.createGain();
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(880, ctx.currentTime);
-                gain.gain.setValueAtTime(0.3, ctx.currentTime);
-                osc.connect(gain);
-                gain.connect(ctx.destination);
-                osc.start();
-                osc.stop(ctx.currentTime + 0.2);
-            } catch(e) {}
-        }
-
-        // --- ANALYTICS / CHART LOGIC ---
-        let growthChartInstance = null;
-
-        function populateChartExerciseSelect() {
-            const select = document.getElementById('chart-exercise-select');
-            select.innerHTML = '';
-            state.exercises.forEach(ex => {
-                const opt = document.createElement('option');
-                opt.value = ex.name;
-                opt.textContent = ex.name;
-                select.appendChild(opt);
-            });
-        }
-
-        function setChartMetric(metric) {
-            state.chartMetric = metric;
-            ['weight', 'volume', '1rm', 'reps'].forEach(m => {
-                const btn = document.getElementById(`m-${m}`);
-                if (m === metric) {
-                    btn.className = "py-1.5 rounded-lg bg-brand-500 text-white font-bold";
-                } else {
-                    btn.className = "py-1.5 rounded-lg text-slate-400 font-bold";
-                }
-            });
-            renderChart();
-        }
-
-        function renderChart() {
-            const selectedExName = document.getElementById('chart-exercise-select').value || state.exercises[0]?.name;
-            if (!selectedExName) return;
-
-            const dates = Object.keys(state.workouts).sort();
-            const labels = [];
-            const dataPoints = [];
-
-            let prMaxWeight = 0;
-            let prMax1RM = 0;
-
-            dates.forEach(d => {
-                const rec = state.workouts[d];
-                if (!rec || !rec.exercises) return;
-
-                const ex = rec.exercises.find(e => e.name === selectedExName);
-                if (!ex) return;
-
-                let dayMaxWeight = 0;
-                let dayVolume = 0;
-                let dayMax1RM = 0;
-                let dayMaxReps = 0;
-
-                ex.sets.forEach(s => {
-                    const w = parseFloat(s.weight) || 0;
-                    const r = parseInt(s.reps) || 0;
-                    const est1RM = w * (1 + r / 30);
-
-                    if (w > dayMaxWeight) dayMaxWeight = w;
-                    if (r > dayMaxReps) dayMaxReps = r;
-                    if (est1RM > dayMax1RM) dayMax1RM = est1RM;
-                    if (s.completed) dayVolume += w * r;
-
-                    if (w > prMaxWeight) prMaxWeight = w;
-                    if (est1RM > prMax1RM) prMax1RM = est1RM;
-                });
-
-                labels.push(d.slice(5)); // MM-DD
-                if (state.chartMetric === 'weight') dataPoints.push(dayMaxWeight);
-                else if (state.chartMetric === 'volume') dataPoints.push(dayVolume);
-                else if (state.chartMetric === '1rm') dataPoints.push(Math.round(dayMax1RM));
-                else if (state.chartMetric === 'reps') dataPoints.push(dayMaxReps);
-            });
-
-            document.getElementById('pr-max-weight').innerHTML = `${prMaxWeight} <span class="text-xs font-normal text-slate-400">kg</span>`;
-            document.getElementById('pr-max-1rm').innerHTML = `${Math.round(prMax1RM)} <span class="text-xs font-normal text-slate-400">kg</span>`;
-
-            const ctx = document.getElementById('growthChart').getContext('2d');
-            if (growthChartInstance) growthChartInstance.destroy();
-
-            growthChartInstance = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: labels.length > 0 ? labels : ['データなし'],
-                    datasets: [{
-                        label: selectedExName,
-                        data: dataPoints.length > 0 ? dataPoints : [0],
-                        borderColor: '#f97316',
-                        backgroundColor: 'rgba(249, 115, 22, 0.1)',
-                        fill: true,
-                        tension: 0.3,
-                        pointRadius: 4,
-                        pointBackgroundColor: '#f97316'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } },
-                        y: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } }
-                    }
-                }
-            });
-        }
-
-        // --- SETTINGS LOGIC ---
-        function saveBodyData() {
-            state.body.weight = parseFloat(document.getElementById('user-weight').value) || 70.0;
-            state.body.fat = parseFloat(document.getElementById('user-fat').value) || 15.0;
-            localStorage.setItem('ironlog_body', JSON.stringify(state.body));
-            alert('身体データを保存しました。');
-        }
-
-        function addNewExercise() {
-            const name = document.getElementById('new-ex-name').value.trim();
-            const part = document.getElementById('new-ex-part').value;
-            const bw = parseFloat(document.getElementById('new-ex-bw').value) || 0;
-            const yt = document.getElementById('new-ex-youtube').value.trim();
-
-            if (!name) {
-                alert('種目名を入力してください。');
-                return;
-            }
-
-            state.exercises.push({ name, part, bwRatio: bw, youtube: yt });
-            saveExercises();
-            renderMasterExercisesList();
-            
-            document.getElementById('new-ex-name').value = '';
-            document.getElementById('new-ex-youtube').value = '';
-            alert(`「${name}」を保存済み種目に追加しました！`);
-        }
-
-        function clearAllData() {
-            if (confirm('すべてのデータ（トレーニング記録、カスタマイズ設定）を消去して初期化しますか？')) {
-                localStorage.clear();
-                location.reload();
-            }
-        }
-    </script>
+    <!-- エントリポイント -->
+    <script type="module" src="./js/app.js"></script>
 </body>
 </html>
+
+
+// =========================================================
+// File: js/utils/Utility.js
+// =========================================================
+export class Utility {
+    /**
+     * 現在の日付を YYYY-MM-DD 形式で取得
+     */
+    static getTodayString() {
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const day = String(today.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+
+    /**
+     * 推定1RMを計算 (Epley formula)
+     */
+    static calculate1RM(weight, reps) {
+        if (reps <= 0) return 0;
+        if (reps === 1) return weight;
+        return Math.round(weight * (1 + reps / 30));
+    }
+}
+
+
+// =========================================================
+// File: js/core/DataManager.js
+// =========================================================
+export class DataManager {
+    constructor() {
+        this.storageKeyPrefix = 'ironlog_';
+    }
+
+    get(key, defaultValue = null) {
+        try {
+            const data = localStorage.getItem(this.storageKeyPrefix + key);
+            return data ? JSON.parse(data) : defaultValue;
+        } catch (error) {
+            console.error(`データの読み込みに失敗しました (${key}):`, error);
+            return defaultValue;
+        }
+    }
+
+    set(key, value) {
+        try {
+            localStorage.setItem(this.storageKeyPrefix + key, JSON.stringify(value));
+        } catch (error) {
+            console.error(`データの保存に失敗しました (${key}):`, error);
+        }
+    }
+}
+
+
+// =========================================================
+// File: js/managers/WorkoutManager.js
+// =========================================================
+import { Utility } from '../utils/Utility.js';
+
+export class WorkoutManager {
+    constructor(dataManager) {
+        this.dataManager = dataManager;
+        this.workouts = this.dataManager.get('workouts', {});
+        this.activeDate = Utility.getTodayString();
+    }
+
+    setActiveDate(dateStr) {
+        this.activeDate = dateStr;
+    }
+
+    getWorkoutForActiveDate() {
+        if (!this.workouts[this.activeDate]) {
+            this.workouts[this.activeDate] = { memo: '', exercises: [] };
+        }
+        return this.workouts[this.activeDate];
+    }
+
+    addExercise(name) {
+        const workout = this.getWorkoutForActiveDate();
+        workout.exercises.push({
+            id: 'ex_' + Date.now(),
+            name: name,
+            sets: []
+        });
+        this.save();
+    }
+
+    addSet(exerciseId, weight, reps) {
+        const workout = this.getWorkoutForActiveDate();
+        const exercise = workout.exercises.find(ex => ex.id === exerciseId);
+        if (exercise) {
+            exercise.sets.push({ 
+                id: 'set_' + Date.now(),
+                weight: Number(weight), 
+                reps: Number(reps), 
+                completed: true 
+            });
+            this.save();
+        }
+    }
+
+    save() {
+        this.dataManager.set('workouts', this.workouts);
+    }
+}
+
+
+// =========================================================
+// File: js/ui/UIManager.js
+// =========================================================
+import { Utility } from '../utils/Utility.js';
+
+export class UIManager {
+    constructor(managers) {
+        this.managers = managers; // { workout: WorkoutManager, ... }
+        this.bindEvents();
+    }
+
+    bindEvents() {
+        // --- ナビゲーション制御 ---
+        const navButtons = document.querySelectorAll('.nav-btn');
+        navButtons.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const viewName = e.currentTarget.id.replace('nav-', '');
+                this.switchView(viewName);
+            });
+        });
+
+        // --- カレンダー画面のイベント ---
+        const btnStartToday = document.getElementById('btn-start-today');
+        if (btnStartToday) {
+            btnStartToday.addEventListener('click', () => {
+                this.managers.workout.setActiveDate(Utility.getTodayString());
+                this.switchView('workout');
+            });
+        }
+
+        // --- ワークアウト画面のイベント ---
+        const btnAddExercise = document.getElementById('btn-add-exercise');
+        if (btnAddExercise) {
+            btnAddExercise.addEventListener('click', () => {
+                // 本来はモーダル等を出しますが、サンプルとしてプロンプトを使用
+                const name = prompt('追加する種目名を入力してください (例: ベンチプレス)');
+                if (name) {
+                    this.managers.workout.addExercise(name);
+                    this.renderWorkoutView(); // データを更新したら再描画
+                }
+            });
+        }
+    }
+
+    switchView(viewName) {
+        // 全セクションを非表示にし、対象だけ表示
+        document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
+        document.getElementById(`view-${viewName}`).classList.remove('hidden');
+
+        // ナビゲーションのハイライト更新
+        document.querySelectorAll('.nav-btn').forEach(el => {
+            el.classList.remove('text-brand-500');
+            el.classList.add('text-slate-400');
+        });
+        document.getElementById(`nav-${viewName}`).classList.remove('text-slate-400');
+        document.getElementById(`nav-${viewName}`).classList.add('text-brand-500');
+        
+        // 表示する画面に応じたレンダリング処理
+        if (viewName === 'workout') {
+            this.renderWorkoutView();
+        }
+    }
+
+    renderWorkoutView() {
+        const activeDate = this.managers.workout.activeDate;
+        const workout = this.managers.workout.getWorkoutForActiveDate();
+        
+        // 日付の更新
+        document.getElementById('workout-active-date').textContent = activeDate;
+        
+        // リストの描画
+        const listContainer = document.getElementById('exercise-list');
+        listContainer.innerHTML = ''; // リセット
+
+        if (workout.exercises.length === 0) {
+            listContainer.innerHTML = '<p class="text-slate-500 text-center py-4">種目がありません。追加してください。</p>';
+            return;
+        }
+
+        workout.exercises.forEach(ex => {
+            const exEl = document.createElement('div');
+            exEl.className = 'bg-slate-800 rounded-lg p-4 border border-slate-700';
+            
+            // 種目ヘッダー
+            let html = `<h3 class="font-bold text-brand-500 mb-2">${ex.name}</h3>`;
+            
+            // セットのリスト
+            if (ex.sets.length > 0) {
+                html += '<div class="space-y-2 mb-3">';
+                ex.sets.forEach((set, index) => {
+                    html += `
+                        <div class="flex justify-between items-center text-sm bg-slate-900 p-2 rounded">
+                            <span class="text-slate-400">Set ${index + 1}</span>
+                            <span>${set.weight} kg × ${set.reps} reps</span>
+                        </div>
+                    `;
+                });
+                html += '</div>';
+            }
+
+            // セット追加ボタン (HTMLの組み立て)
+            html += `
+                <div class="flex gap-2">
+                    <input type="number" id="weight-${ex.id}" placeholder="kg" class="w-1/2 bg-slate-900 border border-slate-600 rounded p-2 text-center">
+                    <input type="number" id="reps-${ex.id}" placeholder="reps" class="w-1/2 bg-slate-900 border border-slate-600 rounded p-2 text-center">
+                    <button data-ex-id="${ex.id}" class="btn-add-set bg-brand-500 text-white px-4 rounded font-bold">＋</button>
+                </div>
+            `;
+            exEl.innerHTML = html;
+            listContainer.appendChild(exEl);
+        });
+
+        // 動的に生成したボタンにイベントを付与
+        document.querySelectorAll('.btn-add-set').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const exId = e.target.getAttribute('data-ex-id');
+                const weight = document.getElementById(`weight-${exId}`).value;
+                const reps = document.getElementById(`reps-${exId}`).value;
+                
+                if (weight && reps) {
+                    this.managers.workout.addSet(exId, weight, reps);
+                    this.renderWorkoutView(); // 状態が変わったら再描画
+                }
+            });
+        });
+    }
+}
+
+
+// =========================================================
+// File: js/app.js
+// =========================================================
+import { DataManager } from './core/DataManager.js';
+import { WorkoutManager } from './managers/WorkoutManager.js';
+import { UIManager } from './ui/UIManager.js';
+
+document.addEventListener('DOMContentLoaded', () => {
+    // 1. データ管理層の初期化
+    const dataManager = new DataManager();
+    
+    // 2. ビジネスロジック層の初期化（他のManagerが増えたらここに追加）
+    const managers = {
+        workout: new WorkoutManager(dataManager)
+    };
+
+    // 3. UI管理層の初期化
+    const uiManager = new UIManager(managers);
+    
+    // 4. アプリ起動時の初期画面を設定
+    uiManager.switchView('calendar');
+});
