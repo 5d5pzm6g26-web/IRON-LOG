@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IRON LOG</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: { extend: { colors: { brand: { 500: '#ef4444' } } } }
+        }
+    </script>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen pb-20">
+
+    <!-- ヘッダー -->
+    <header class="bg-slate-800 p-4 shadow-md text-center">
+        <h1 class="text-xl font-bold text-brand-500 tracking-wider">IRON LOG</h1>
+    </header>
+
+    <!-- メインコンテンツ領域 -->
+    <main id="app-container" class="p-4">
+        
+        <!-- カレンダービュー -->
+        <section id="view-calendar" class="view-section">
+            <h2 class="text-lg font-bold mb-4 border-b border-slate-700 pb-2">Calendar / 記録</h2>
+            <div class="bg-slate-800 rounded-lg p-4 text-center text-slate-400">
+                <p>カレンダーUIがここに表示されます</p>
+                <button id="btn-start-today" class="mt-4 bg-brand-500 text-white px-6 py-2 rounded-full font-bold shadow-lg">
+                    今日のトレーニングを始める
+                </button>
+            </div>
+        </section>
+
+        <!-- ワークアウトビュー -->
+        <section id="view-workout" class="view-section hidden">
+            <div class="flex justify-between items-end mb-4 border-b border-slate-700 pb-2">
+                <h2 class="text-lg font-bold">Workout</h2>
+                <span id="workout-active-date" class="text-sm text-slate-400"></span>
+            </div>
+            
+            <div id="exercise-list" class="space-y-4">
+                <!-- JavaScriptで種目がここに追加されます -->
+            </div>
+
+            <button id="btn-add-exercise" class="mt-6 w-full bg-slate-700 hover:bg-slate-600 text-white py-3 rounded-lg font-bold transition-colors">
+                ＋ 種目を追加
+            </button>
+        </section>
+
+    </main>
+
+    <!-- ボトムナビゲーション -->
+    <nav class="fixed bottom-0 w-full bg-slate-800 border-t border-slate-700 flex justify-around p-3 pb-safe shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.3)]">
+        <button id="nav-calendar" class="nav-btn flex flex-col items-center text-brand-500">
+            <span class="text-xs font-bold mt-1">Calendar</span>
+        </button>
+        <button id="nav-workout" class="nav-btn flex flex-col items-center text-slate-400">
+            <span class="text-xs font-bold mt-1">Workout</span>
+        </button>
+    </nav>
+
+    <!-- エントリポイント -->
+    <script type="module" src="./js/app.js"></script>
+</body>
+</html>
