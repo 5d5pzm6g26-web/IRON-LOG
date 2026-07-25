@@ -46,10 +46,27 @@ fs.copyFileSync(cssSrc, path.join(distDir, 'tailwind.css'));
 // index.html を dist に出力
 fs.writeFileSync(path.join(distDir, 'index.html'), html, 'utf8');
 
+// PWA アセット（manifest / service worker / icons）を dist にコピー
+function copyIfExists(src, dest) {
+  if (fs.existsSync(src)) {
+    fs.mkdirSync(path.dirname(dest), { recursive: true });
+    fs.copyFileSync(src, dest);
+  }
+}
+copyIfExists(path.join(root, 'manifest.json'), path.join(distDir, 'manifest.json'));
+copyIfExists(path.join(root, 'sw.js'), path.join(distDir, 'sw.js'));
+const iconsDir = path.join(root, 'icons');
+if (fs.existsSync(iconsDir)) {
+  fs.mkdirSync(path.join(distDir, 'icons'), { recursive: true });
+  for (const f of fs.readdirSync(iconsDir)) {
+    copyIfExists(path.join(iconsDir, f), path.join(distDir, 'icons', f));
+  }
+}
+
 // 簡易チェック: CDNが残っていないこと
 if (/cdn\.tailwindcss\.com/.test(html)) {
   console.error('WARNING: 生成後の index.html にまだ Tailwind CDN 参照が残っています。');
   process.exit(1);
 }
 
-console.log('OK: dist/index.html と dist/tailwind.css を生成しました。');
+console.log('OK: dist/index.html, tailwind.css, PWAアセット を生成しました。');
