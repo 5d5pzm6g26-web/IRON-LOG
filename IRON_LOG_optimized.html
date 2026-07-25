@@ -4,6 +4,13 @@
     <meta charset="UTF-8">              
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">              
     <title>筋トレ記録アプリ IRON LOG</title>              
+    <!-- PWA: マニフェスト＆iOSホーム画面/全画面起動用の設定 -->              
+    <link rel="manifest" href="./manifest.json">              
+    <meta name="theme-color" content="#0f172a">              
+    <meta name="apple-mobile-web-app-capable" content="yes">              
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">              
+    <meta name="apple-mobile-web-app-title" content="IRON LOG">              
+    <link rel="apple-touch-icon" href="./icons/icon-180.png">              
     <!-- Tailwind CSS -->              
     <script src="https://cdn.tailwindcss.com"></script>              
     <script>              
@@ -2051,6 +2058,14 @@
             if (document.visibilityState === 'hidden') WorkoutManager.flushSave();              
         });              
         window.addEventListener('pagehide', () => WorkoutManager.flushSave());              
+        // PWA: Service Worker を登録（ホーム画面追加・全画面起動を有効化）              
+        if ('serviceWorker' in navigator) {              
+            window.addEventListener('load', () => {              
+                navigator.serviceWorker.register('./sw.js').catch((e) => {              
+                    console.log('SW registration failed:', e);              
+                });              
+            });              
+        }              
     </script>              
 </body>              
 </html>  
