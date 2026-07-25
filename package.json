@@ -1,0 +1,13 @@
+{
+  "name": "iron-log",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "build:css": "tailwindcss -c ./tailwind.config.js -i ./input.css -o ./tailwind.css --minify",
+    "build:html": "node build/swap-cdn.js",
+    "build": "npm run build:css && npm run build:html"
+  },
+  "devDependencies": {
+    "tailwindcss": "3.4.17"
+  }
+}
