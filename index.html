@@ -706,6 +706,68 @@
                     console.error(`Error saving key ${key}`, e);              
                 }              
             },              
+            // 修正7：トレーニングログを月別キーに分割して保存する層              
+            //   ・メモリ上は従来どおり1つの { 'YYYY-MM-DD': [...] } に統合して扱う（他コードは無変更）              
+            //   ・保存時は該当月のキーだけを書き換えるので、データ量が増えても書き込みが軽い              
+            LOGS_MONTH_PREFIX: 'ironlog_workout_logs__',              
+            monthKeyOf(dateStr) {              
+                // dateStr = 'YYYY-MM-DD' → 'YYYY-MM'              
+                return dateStr.slice(0, 7);              
+            },              
+            // 旧・単一キー(WORKOUT_LOGS)が残っていれば月別キーへ移行し、旧キーを削除              
+            migrateLogsIfNeeded() {              
+                try {              
+                    const legacy = localStorage.getItem(this.KEYS.WORKOUT_LOGS);              
+                    if (!legacy) return;              
+                    const all = JSON.parse(legacy) || {};              
+                    const byMonth = {};              
+                    Object.keys(all).forEach(dateStr => {              
+                        const mk = this.monthKeyOf(dateStr);              
+                        (byMonth[mk] = byMonth[mk] || {})[dateStr] = all[dateStr];              
+                    });              
+                    Object.keys(byMonth).forEach(mk => {              
+                        localStorage.setItem(this.LOGS_MONTH_PREFIX + mk, JSON.stringify(byMonth[mk]));              
+                    });              
+                    localStorage.removeItem(this.KEYS.WORKOUT_LOGS);              
+                } catch (e) {              
+                    console.error('Error migrating workout logs', e);              
+                }              
+            },              
+            // 全月キーを読み込み、1つの統合オブジェクトにして返す              
+            loadAllLogs() {              
+                this.migrateLogsIfNeeded();              
+                const merged = {};              
+                try {              
+                    for (let i = 0; i < localStorage.length; i++) {              
+                        const key = localStorage.key(i);              
+                        if (key && key.startsWith(this.LOGS_MONTH_PREFIX)) {              
+                            const monthData = JSON.parse(localStorage.getItem(key)) || {};              
+                            Object.assign(merged, monthData);              
+                        }              
+                    }              
+                } catch (e) {              
+                    console.error('Error loading workout logs', e);              
+                }              
+                return merged;              
+            },              
+            // 指定した日付が属する月のキーだけを、統合ログから再構築して書き込む              
+            saveLogsForMonth(allLogs, dateStr) {              
+                try {              
+                    const mk = this.monthKeyOf(dateStr);              
+                    const monthData = {};              
+                    Object.keys(allLogs).forEach(d => {              
+                        if (this.monthKeyOf(d) === mk) monthData[d] = allLogs[d];              
+                    });              
+                    const storeKey = this.LOGS_MONTH_PREFIX + mk;              
+                    if (Object.keys(monthData).length === 0) {              
+                        localStorage.removeItem(storeKey);              
+                    } else {              
+                        localStorage.setItem(storeKey, JSON.stringify(monthData));              
+                    }              
+                } catch (e) {              
+                    console.error('Error saving workout logs for month', e);              
+                }              
+            },              
             clearAllData() {              
                 if (confirm('すべての記録と設定を初期化しますか？この操作は取り消せません。')) {              
                     localStorage.clear();              
@@ -818,7 +880,7 @@
             currentFilterPart: 'ALL',              
               
             init() {              
-                this.logs = DataManager.loadData(DataManager.KEYS.WORKOUT_LOGS, {});              
+                this.logs = DataManager.loadAllLogs();              
                 this.memos = DataManager.loadData(DataManager.KEYS.WORKOUT_MEMOS, {});              
                 this.completedDates = DataManager.loadData(DataManager.KEYS.COMPLETED_DATES, {});              
                 this.masterExercises = DataManager.loadData(DataManager.KEYS.MASTER_EXERCISES, DataManager.DEFAULT_EXERCISES);              
@@ -828,7 +890,7 @@
             },              
             saveLogsForDate(dateStr, exerciseList) {              
                 this.logs[dateStr] = exerciseList;              
-                DataManager.saveData(DataManager.KEYS.WORKOUT_LOGS, this.logs);              
+                DataManager.saveLogsForMonth(this.logs, dateStr);              
             },              
             calculateDailyVolume(dateStr) {              
                 const dayLogs = this.getLogsForDate(dateStr);              
@@ -896,7 +958,7 @@
                             <div class="space-y-2">              
                                 <div class="flex items-center gap-3">              
                                     <div class="w-[80%] relative rounded-xl overflow-hidden aspect-video bg-black/40 border border-slate-700 group cursor-pointer" onclick="UIManager.openYouTubeModal('${ex.name}', '${ex.url}')">              
-                                        <img src="${ex.thumbnail || 'https://img.youtube.com/vi/'+ex.videoId+'/hqdefault.jpg'}" class="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition">              
+                                        <img src="${ex.thumbnail || 'https://img.youtube.com/vi/'+ex.videoId+'/hqdefault.jpg'}" loading="lazy" decoding="async" class="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition">              
                                         <div class="absolute inset-0 flex items-center justify-center">              
                                             <div class="w-12 h-12 rounded-full bg-rose-600 text-white flex items-center justify-center shadow-lg group-hover:scale-110 transition">              
                                                 <i class="fa-solid fa-play ml-0.5 text-base"></i>              
@@ -984,17 +1046,24 @@
             },              
             // 保存のデバウンス: 連続入力中の同期書き込みを1回にまとめる              
             _saveTimer: null,              
+            _pendingSaveDate: null,              
             scheduleSave(dateStr, exerciseList) {              
                 this.logs[dateStr] = exerciseList;              
+                this._pendingSaveDate = dateStr;              
                 if (this._saveTimer) clearTimeout(this._saveTimer);              
                 this._saveTimer = setTimeout(() => {              
-                    DataManager.saveData(DataManager.KEYS.WORKOUT_LOGS, this.logs);              
+                    DataManager.saveLogsForMonth(this.logs, dateStr);              
                     this._saveTimer = null;              
+                    this._pendingSaveDate = null;              
                 }, 400);              
             },              
             flushSave() {              
+                if (!this._saveTimer && this._pendingSaveDate === null) return;              
                 if (this._saveTimer) { clearTimeout(this._saveTimer); this._saveTimer = null; }              
-                DataManager.saveData(DataManager.KEYS.WORKOUT_LOGS, this.logs);              
+                if (this._pendingSaveDate !== null) {              
+                    DataManager.saveLogsForMonth(this.logs, this._pendingSaveDate);              
+                    this._pendingSaveDate = null;              
+                }              
             },              
             // 修正2：前回の記録を読み込む機能の実装  
             loadPreviousRecord(exIdx) {  
