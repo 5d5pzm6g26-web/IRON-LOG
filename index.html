@@ -1569,9 +1569,14 @@
                 document.getElementById('pr-max-weight').innerHTML = `${maxWeight} <span class="text-xs font-normal text-slate-400">kg</span>`;              
               
                 const ctx = document.getElementById('growthChart').getContext('2d');              
-                if (this.chartInstance) this.chartInstance.destroy();              
-              
-                this.chartInstance = new Chart(ctx, {              
+                // 既存インスタンスがあればデータ差し替えのみ（再生成しない）              
+                if (this.chartInstance) {              
+                    this.chartInstance.data.labels = labels;              
+                    this.chartInstance.data.datasets[0].label = exName;              
+                    this.chartInstance.data.datasets[0].data = dataPoints;              
+                    this.chartInstance.update();              
+                } else {              
+                    this.chartInstance = new Chart(ctx, {              
                     type: 'line',              
                     data: {              
                         labels: labels,              
@@ -1597,6 +1602,7 @@
                         }              
                     }              
                 });  
+                }  
   
                 // 修正4：身体データ推移グラフの描画  
                 this.renderBodyChart();  
@@ -1615,9 +1621,14 @@
                 });  
   
                 const ctx = document.getElementById('bodyGrowthChart').getContext('2d');  
-                if (this.bodyChartInstance) this.bodyChartInstance.destroy();  
-  
-                this.bodyChartInstance = new Chart(ctx, {  
+                // 既存インスタンスがあればデータ差し替えのみ（再生成しない）  
+                if (this.bodyChartInstance) {  
+                    this.bodyChartInstance.data.labels = labels;  
+                    this.bodyChartInstance.data.datasets[0].data = weightData;  
+                    this.bodyChartInstance.data.datasets[1].data = fatData;  
+                    this.bodyChartInstance.update();  
+                } else {  
+                    this.bodyChartInstance = new Chart(ctx, {  
                     type: 'line',  
                     data: {  
                         labels: labels,  
@@ -1653,6 +1664,7 @@
                         }  
                     }  
                 });  
+                }  
             }  
         };              
               
