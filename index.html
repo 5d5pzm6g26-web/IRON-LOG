@@ -1469,34 +1469,54 @@
                 this.reset();              
             },              
             updateUI() {              
+                // ⑧ 変化があった要素だけDOMを書き換える（毎秒の無駄な再設定を避ける）              
+                const ui = (this._ui = this._ui || {});              
+              
                 const displayStr = `${String(Math.floor(this.state.seconds / 60)).padStart(2, '0')}:${String(this.state.seconds % 60).padStart(2, '0')}`;              
-                document.getElementById('timer-standalone-display').textContent = displayStr;              
-                document.getElementById('timer-display').textContent = displayStr;              
-              
-                const badge = document.getElementById('timer-badge');              
-                if (this.state.active) badge.classList.remove('hidden');              
-                else badge.classList.add('hidden');              
-              
-                document.getElementById('timer-current-set').textContent = this.state.currentSet;              
-                document.getElementById('timer-total-sets').textContent = this.state.totalSets;              
-              
-                const phaseBadge = document.getElementById('timer-phase-badge');              
-                if (this.state.phase === 'WORK') {              
-                    phaseBadge.textContent = '運動中';              
-                    phaseBadge.className = 'px-2.5 py-0.5 rounded-full bg-brand-500 text-[10px] font-bold text-white';              
-                } else if (this.state.phase === 'REST') {              
-                    phaseBadge.textContent = '休憩中';              
-                    phaseBadge.className = 'px-2.5 py-0.5 rounded-full bg-amber-500 text-[10px] font-bold text-white';              
-                } else {              
-                    phaseBadge.textContent = '完了';              
-                    phaseBadge.className = 'px-2.5 py-0.5 rounded-full bg-emerald-500 text-[10px] font-bold text-white';              
+                if (ui.displayStr !== displayStr) {              
+                    document.getElementById('timer-standalone-display').textContent = displayStr;              
+                    document.getElementById('timer-display').textContent = displayStr;              
+                    ui.displayStr = displayStr;              
                 }              
               
-                const toggleBtn = document.getElementById('timer-toggle-btn');              
-                toggleBtn.innerHTML = this.state.active ? '<i class="fa-solid fa-pause mr-1.5"></i> 一時停止' : '<i class="fa-solid fa-play mr-1.5"></i> スタート';              
+                if (ui.active !== this.state.active) {              
+                    const badge = document.getElementById('timer-badge');              
+                    if (this.state.active) badge.classList.remove('hidden');              
+                    else badge.classList.add('hidden');              
+                    const toggleBtn = document.getElementById('timer-toggle-btn');              
+                    toggleBtn.innerHTML = this.state.active ? '<i class="fa-solid fa-pause mr-1.5"></i> 一時停止' : '<i class="fa-solid fa-play mr-1.5"></i> スタート';              
+                    ui.active = this.state.active;              
+                }              
+              
+                if (ui.currentSet !== this.state.currentSet) {              
+                    document.getElementById('timer-current-set').textContent = this.state.currentSet;              
+                    ui.currentSet = this.state.currentSet;              
+                }              
+                if (ui.totalSets !== this.state.totalSets) {              
+                    document.getElementById('timer-total-sets').textContent = this.state.totalSets;              
+                    ui.totalSets = this.state.totalSets;              
+                }              
+              
+                if (ui.phase !== this.state.phase) {              
+                    const phaseBadge = document.getElementById('timer-phase-badge');              
+                    if (this.state.phase === 'WORK') {              
+                        phaseBadge.textContent = '運動中';              
+                        phaseBadge.className = 'px-2.5 py-0.5 rounded-full bg-brand-500 text-[10px] font-bold text-white';              
+                    } else if (this.state.phase === 'REST') {              
+                        phaseBadge.textContent = '休憩中';              
+                        phaseBadge.className = 'px-2.5 py-0.5 rounded-full bg-amber-500 text-[10px] font-bold text-white';              
+                    } else {              
+                        phaseBadge.textContent = '完了';              
+                        phaseBadge.className = 'px-2.5 py-0.5 rounded-full bg-emerald-500 text-[10px] font-bold text-white';              
+                    }              
+                    ui.phase = this.state.phase;              
+                }              
               
                 const pct = (this.state.seconds / this.state.totalSeconds) * 100;              
-                document.getElementById('timer-standalone-progress').style.width = `${pct}%`;              
+                if (ui.pct !== pct) {              
+                    document.getElementById('timer-standalone-progress').style.width = `${pct}%`;              
+                    ui.pct = pct;              
+                }              
             },              
             saveCurrentAsPreset() {              
                 const nameInput = document.getElementById('preset-name-input');              
