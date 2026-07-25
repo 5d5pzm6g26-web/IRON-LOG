@@ -2,7 +2,7 @@
 <html lang="ja" class="dark">              
 <head>              
     <meta charset="UTF-8">              
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">              
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">              
     <title>筋トレ記録アプリ IRON LOG</title>              
     <!-- PWA: マニフェスト＆iOSホーム画面/全画面起動用の設定 -->              
     <link rel="manifest" href="./manifest.json">              
@@ -54,9 +54,18 @@
             transform: scale(0.95);              
             background-color: rgba(249, 115, 22, 0.3);              
         }              
+        /* UI改善: フルスクリーン(standalone)時のホームインジケーター(セーフエリア)対応。
+           通常時は env() が 0 になるため、既存の見た目・高さは変わらない。 */
+        .app-tabbar {              
+            padding-bottom: env(safe-area-inset-bottom, 0px);              
+        }              
+        body {              
+            /* タブバー本体の高さ + セーフエリア分だけ本文の下余白を確保（誤タップ防止） */
+            padding-bottom: calc(6rem + env(safe-area-inset-bottom, 0px));              
+        }              
     </style>              
 </head>              
-<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col justify-between pb-24 select-none antialiased">              
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col justify-between select-none antialiased">              
               
     <!-- Top Header -->              
     <header class="bg-slate-800/90 backdrop-blur-md border-b border-slate-700/60 sticky top-0 z-40 px-4 py-2.5 flex justify-between items-center shadow-md">              
@@ -587,7 +596,7 @@
     </div>              
               
     <!-- BOTTOM NAVIGATION BAR -->              
-    <nav class="fixed bottom-0 left-0 right-0 bg-slate-800/90 backdrop-blur-md border-t border-slate-700/80 z-40 max-w-md mx-auto">              
+    <nav class="app-tabbar fixed bottom-0 left-0 right-0 bg-slate-800/90 backdrop-blur-md border-t border-slate-700/80 z-40 max-w-md mx-auto">              
         <div class="grid grid-cols-5 text-center py-2">              
             <button onclick="UIManager.switchView('calendar')" id="nav-calendar" class="text-brand-500 flex flex-col items-center gap-0.5">              
                 <i class="fa-solid fa-house text-base"></i>              
