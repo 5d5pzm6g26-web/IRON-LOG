@@ -165,10 +165,10 @@
                 </div>              
                 <!-- 数値グリッド -->              
                 <div class="grid grid-cols-3 gap-px bg-slate-700/50">              
-                    <div class="bg-slate-800 px-3 py-4 text-center">              
+                    <button onclick="CalendarManager.editWorkoutTime()" class="bg-slate-800 px-3 py-4 text-center active:bg-slate-700/60 transition group">              
                         <div id="summary-time" class="text-2xl font-black text-white font-mono leading-none">--</div>              
-                        <div class="text-[10px] text-slate-400 font-bold mt-1.5">トレーニング時間</div>              
-                    </div>              
+                        <div class="text-[10px] text-slate-400 font-bold mt-1.5 flex items-center justify-center gap-1">トレーニング時間 <i class="fa-solid fa-pen text-[8px] text-slate-500 group-active:text-brand-400"></i></div>              
+                    </button>              
                     <div class="bg-slate-800 px-3 py-4 text-center">              
                         <div class="text-2xl font-black text-white font-mono leading-none"><span id="summary-volume">0</span><span class="text-xs text-slate-400 font-bold">kg</span></div>              
                         <div class="text-[10px] text-slate-400 font-bold mt-1.5">総ボリューム</div>              
@@ -539,6 +539,28 @@
             <div class="flex gap-2 pt-1">              
                 <button onclick="UIManager.toggleModal('workout-memo')" class="flex-1 py-2.5 bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold rounded-xl text-xs transition">キャンセル</button>              
                 <button onclick="WorkoutManager.saveMemoAndFinish()" class="flex-1 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-black rounded-xl text-xs shadow-md transition">保存して記録完了</button>              
+            </div>              
+        </div>              
+    </div>              
+
+    <!-- Edit Workout Time Modal -->              
+    <div id="modal-edit-time" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">              
+        <div class="bg-slate-800 border border-slate-700 w-full max-w-sm rounded-2xl p-4 space-y-3">              
+            <div class="flex justify-between items-center border-b border-slate-700/60 pb-2">              
+                <h3 class="font-bold text-white text-sm flex items-center gap-2">              
+                    <i class="fa-solid fa-clock text-brand-400"></i> トレーニング時間の編集              
+                </h3>              
+                <button onclick="UIManager.toggleModal('edit-time')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>              
+            </div>              
+            <p class="text-xs text-slate-300">分単位で入力してください。空欄で保存すると自動計測に戻ります。</p>              
+            <div class="flex items-center gap-2">              
+                <input id="edit-time-input" type="number" inputmode="numeric" min="0" placeholder="例: 51" class="flex-1 bg-slate-900 border border-slate-700 rounded-xl p-3 text-lg text-white font-mono placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500">              
+                <span class="text-sm font-bold text-slate-400">分</span>              
+            </div>              
+            <div id="edit-time-auto-hint" class="text-[10px] text-slate-500"></div>              
+            <div class="flex gap-2 pt-1">              
+                <button onclick="CalendarManager.clearWorkoutTime()" class="py-2.5 px-3 bg-slate-700/60 hover:bg-slate-700 text-slate-300 font-bold rounded-xl text-xs transition">自動に戻す</button>              
+                <button onclick="CalendarManager.saveWorkoutTime()" class="flex-1 py-2.5 bg-gradient-to-r from-brand-500 to-amber-500 hover:from-brand-600 hover:to-amber-600 text-white font-black rounded-xl text-xs shadow-md transition">保存</button>              
             </div>              
         </div>              
     </div>              
@@ -981,6 +1003,31 @@
             getMetaForDate(dateStr) {              
                 return this.meta[dateStr] || { activeSeconds: 0 };              
             },              
+            // 表示用の時間(秒): 手動入力があればそれを優先、なければ自動計測値
+            getDisplaySeconds(dateStr) {              
+                const m = this.getMetaForDate(dateStr);              
+                if (m.manualMinutes !== undefined && m.manualMinutes !== null && m.manualMinutes !== '') {              
+                    return (parseInt(m.manualMinutes, 10) || 0) * 60;              
+                }              
+                return m.activeSeconds || 0;              
+            },              
+            isManualTime(dateStr) {              
+                const m = this.getMetaForDate(dateStr);              
+                return m.manualMinutes !== undefined && m.manualMinutes !== null && m.manualMinutes !== '';              
+            },              
+            // 手動でトレーニング時間(分)を設定。null/空を渡すと自動計測に戻す。
+            setManualMinutes(dateStr, minutes) {              
+                const m = this.meta[dateStr] || { activeSeconds: 0 };              
+                if (minutes === null || minutes === '' || minutes === undefined) {              
+                    delete m.manualMinutes; // 自動計測へ戻す
+                } else {              
+                    let n = parseInt(minutes, 10);              
+                    if (isNaN(n) || n < 0) n = 0;              
+                    m.manualMinutes = n;              
+                }              
+                this.meta[dateStr] = m;              
+                DataManager.saveMetaForMonth(this.meta, dateStr);              
+            },              
             markActivity() {              
                 const dateStr = UIManager.state.selectedDate;              
                 if (!dateStr) return;              
@@ -1001,6 +1048,44 @@
             },              
             getLogsForDate(dateStr) {              
                 return this.logs[dateStr] || [];              
+            },              
+            // 自重種目の実効重量 = (体重 + 加重) × 自重負荷率。小数第1位で丸め。
+            computeBodyweightLoad(bodyValue, addedWeight, pct) {              
+                const bw = parseFloat(bodyValue) || 0;              
+                const add = parseFloat(addedWeight) || 0;              
+                const p = parseFloat(pct) || 0;              
+                return Math.round((bw + add) * (p / 100) * 10) / 10;              
+            },              
+            // 種目が自重系か判定し、必要なら旧データを新モデルへ遅延移行(isBodyweight等を付与)
+            ensureBodyweightModel(ex) {              
+                if (ex.type !== 'normal') return ex;              
+                if (ex.isBodyweight === undefined) {              
+                    const master = this.masterExercises.find(m => m.name === ex.name);              
+                    if (master && master.bodyweightPct && master.bodyweightPct > 0) {              
+                        const profile = DataManager.loadData(DataManager.KEYS.USER_PROFILE, { weight: 70.0, fat: 15.0 });              
+                        ex.isBodyweight = true;              
+                        ex.bodyweightPct = master.bodyweightPct;              
+                        ex.bodyValue = parseFloat(profile.weight) || 70.0;              
+                        ex.addedWeight = 0; // 既存データは加重0スタート
+                    } else {              
+                        ex.isBodyweight = false;              
+                    }              
+                }              
+                return ex;              
+            },              
+            // 加重を設定し、全セットの重量を再計算して保存
+            setAddedWeight(exIdx, value) {              
+                const activeDate = UIManager.state.selectedDate;              
+                const dayLogs = this.getLogsForDate(activeDate);              
+                const ex = dayLogs[exIdx];              
+                if (!ex || !ex.isBodyweight) return;              
+                let add = parseFloat(value);              
+                if (isNaN(add) || add < 0) add = 0;              
+                ex.addedWeight = add;              
+                const load = this.computeBodyweightLoad(ex.bodyValue, add, ex.bodyweightPct);              
+                ex.sets.forEach(s => { s.weight = String(load); });              
+                this.saveLogsForDate(activeDate, dayLogs);              
+                this.refreshCard(exIdx);              
             },              
             saveLogsForDate(dateStr, exerciseList) {              
                 this.logs[dateStr] = exerciseList;              
@@ -1036,20 +1121,20 @@
                     // メニュー表示用の代表値(最頻出の重量×回数、セット数)
                     items.push(this.summarizeExercise(ex, master));              
                 });              
-                const activeSeconds = (this.getMetaForDate(dateStr).activeSeconds) || 0;              
+                const activeSeconds = this.getDisplaySeconds(dateStr);              
                 return {              
                     volume: Math.round(volume * 10) / 10,              
                     sets,              
                     parts,              
                     items,              
                     activeSeconds,              
+                    isManualTime: this.isManualTime(dateStr),              
                     exerciseCount: normal.length              
                 };              
             },              
-            // 1種目を「80kg × 8回 × 3セット」形式に要約(重量が全セット同じでなければ代表値+補足)
+            // 1種目を「80kg × 8回 × 3セット」形式に要約(自重種目も実効重量kgを表示)
             summarizeExercise(ex, master) {              
                 const setCount = ex.sets.length;              
-                const isBodyweight = master && master.bodyweightPct && master.bodyweightPct > 0;              
                 // 最も多く登場する (weight,reps) の組を代表にする
                 const key = s => `${parseFloat(s.weight)||0}|${parseFloat(s.reps)||0}`;              
                 const counts = {};              
@@ -1061,10 +1146,10 @@
                 const weight = parseFloat(w) || 0;              
                 const reps = parseFloat(r) || 0;              
                 let detail;              
-                if (isBodyweight || weight === 0) {              
-                    detail = `${reps}回 × ${setCount}セット`;              
-                } else {              
+                if (weight > 0) {              
                     detail = `${weight}kg × ${reps}回 × ${setCount}セット`;              
+                } else {              
+                    detail = `${reps}回 × ${setCount}セット`;              
                 }              
                 return { name: ex.name, detail };              
             },              
@@ -1142,9 +1227,17 @@
                             </div>              
                         `;              
                     } else {              
+                        this.ensureBodyweightModel(ex);              
                         const masterEx = this.masterExercises.find(m => m.name === ex.name);              
                         const youtubeBtnHtml = masterEx && masterEx.youtubeUrl ?               
                             `<button onclick="UIManager.openYouTubeModal('${masterEx.name}', '${masterEx.youtubeUrl}')" class="text-rose-400 hover:text-rose-300 text-xs px-2 py-1 bg-rose-500/10 rounded-lg flex items-center gap-1 border border-rose-500/20"><i class="fa-brands fa-youtube"></i> 解説</button>` : '';              
+                        // 自重種目のみ: 名前の横に加重(kg)入力を表示
+                        const addedWeightHtml = ex.isBodyweight ?              
+                            `<span class="flex items-center gap-1 shrink-0 ml-1 px-1.5 py-0.5 rounded-lg bg-slate-900/70 border border-slate-700">              
+                                <span class="text-[9px] text-slate-400 font-bold">加重</span>              
+                                <input type="number" inputmode="decimal" min="0" step="0.5" value="${ex.addedWeight || 0}" onchange="WorkoutManager.setAddedWeight(${exIdx}, this.value)" onclick="event.stopPropagation()" class="w-10 bg-transparent text-white text-xs font-mono font-bold text-right focus:outline-none">              
+                                <span class="text-[9px] text-slate-400 font-bold">kg</span>              
+                            </span>` : '';              
               
                         let setsHtml = '';              
                         if (ex.sets) {              
@@ -1153,14 +1246,18 @@
                                 const borderClass = isActive ? 'border-brand-500 bg-brand-500/10' : 'border-slate-700/80 bg-slate-900/60';              
                                 const isCompleted = set.completed === true;              
                                 const completeBtnClass = isCompleted ? 'text-emerald-400 bg-emerald-500/20 border-emerald-500/40' : 'text-slate-500 hover:text-slate-300 bg-slate-800 border-slate-700/80';              
-              
+                                // 自重種目は重量が(体重+加重)×率で自動算出されるため、重量セルは表示のみ(タップ編集不可)
+                                const weightCellHtml = ex.isBodyweight ?              
+                                    `<div class="w-full px-2 py-2 rounded-lg bg-slate-900/40 text-slate-300 border border-slate-700/40 font-mono font-bold text-center">${set.weight} <span class="text-[10px] text-slate-500">kg</span></div>` :              
+                                    `<button onclick="UIManager.openNumpad(${exIdx}, ${setIdx}, 'weight')" class="w-full px-2 py-2 rounded-lg bg-slate-800/90 text-slate-100 hover:bg-slate-700 border border-slate-700/60 shadow-sm font-mono font-bold text-center">${set.weight} <span class="text-[10px] text-slate-400">kg</span></button>`;              
+
                                 setsHtml += `              
                                     <div class="grid grid-cols-12 gap-1.5 items-center p-2 rounded-xl border ${borderClass} text-xs transition">              
                                         <div class="col-span-2 flex items-center justify-center font-mono font-bold">              
                                             <div class="w-6 h-6 flex items-center justify-center rounded-lg bg-slate-800 text-[11px] text-slate-300">${setIdx + 1}</div>              
                                         </div>              
                                         <div class="col-span-4">              
-                                            <button onclick="UIManager.openNumpad(${exIdx}, ${setIdx}, 'weight')" class="w-full px-2 py-2 rounded-lg bg-slate-800/90 text-slate-100 hover:bg-slate-700 border border-slate-700/60 shadow-sm font-mono font-bold text-center">${set.weight} <span class="text-[10px] text-slate-400">kg</span></button>              
+                                            ${weightCellHtml}              
                                         </div>              
                                         <div class="col-span-3">              
                                             <button onclick="UIManager.openNumpad(${exIdx}, ${setIdx}, 'reps')" class="w-full px-2 py-2 rounded-lg bg-slate-800/90 text-slate-100 hover:bg-slate-700 border border-slate-700/60 shadow-sm font-mono font-bold text-center">${set.reps} <span class="text-[10px] text-slate-400">回</span></button>              
@@ -1177,7 +1274,8 @@
                         return `              
                             <div class="flex justify-between items-center border-b border-slate-700/60 pb-2">              
                                 <div class="flex items-center gap-2 truncate">              
-                                    <span class="font-bold text-sm text-white truncate max-w-[130px]">${ex.name}</span>              
+                                    <span class="font-bold text-sm text-white truncate max-w-[110px]">${ex.name}</span>              
+                                    ${addedWeightHtml}              
                                     ${youtubeBtnHtml}              
                                 </div>              
                                 <div class="flex items-center gap-1">              
@@ -1294,17 +1392,28 @@
                         completed: false              
                     });              
                 } else {              
-                    let initialWeight = '60.0';              
                     if (masterEx.bodyweightPct && masterEx.bodyweightPct > 0) {              
                         const profile = DataManager.loadData(DataManager.KEYS.USER_PROFILE, { weight: 70.0, fat: 15.0 });              
-                        const bodyweight = parseFloat(profile.weight) || 70.0;              
-                        initialWeight = String(Math.round(bodyweight * (masterEx.bodyweightPct / 100) * 10) / 10);              
+                        const bodyValue = parseFloat(profile.weight) || 70.0;              
+                        const addedWeight = 0;              
+                        const load = this.computeBodyweightLoad(bodyValue, addedWeight, masterEx.bodyweightPct);              
+                        dayLogs.push({              
+                            type: 'normal',              
+                            name: masterEx.name,              
+                            isBodyweight: true,              
+                            bodyweightPct: masterEx.bodyweightPct,              
+                            bodyValue: bodyValue,              
+                            addedWeight: addedWeight,              
+                            sets: [{ weight: String(load), reps: '10', completed: false, manualWeight: false }]              
+                        });              
+                    } else {              
+                        dayLogs.push({              
+                            type: 'normal',              
+                            name: masterEx.name,              
+                            isBodyweight: false,              
+                            sets: [{ weight: '60.0', reps: '10', completed: false, manualWeight: false }]              
+                        });              
                     }              
-                    dayLogs.push({              
-                        type: 'normal',              
-                        name: masterEx.name,              
-                        sets: [{ weight: initialWeight, reps: '10', completed: false, manualWeight: false }]              
-                    });              
                 }              
               
                 this.saveLogsForDate(activeDate, dayLogs);              
@@ -1581,6 +1690,39 @@
                         <span class="text-xs text-slate-400 font-mono whitespace-nowrap flex-shrink-0">${it.detail}</span>              
                     </div>              
                 `).join('');              
+            },              
+            // トレーニング時間の手動編集
+            editWorkoutTime() {              
+                const dStr = UIManager.state.selectedDate;              
+                const input = document.getElementById('edit-time-input');              
+                const hint = document.getElementById('edit-time-auto-hint');              
+                // 現在の表示値(分)をプリセット。手動値があればそれ、なければ自動計測の分。
+                const displayMin = Math.round(WorkoutManager.getDisplaySeconds(dStr) / 60);              
+                if (WorkoutManager.isManualTime(dStr)) {              
+                    input.value = displayMin;              
+                } else {              
+                    input.value = '';              
+                    input.placeholder = displayMin > 0 ? `自動計測: 約${displayMin}分` : '例: 51';              
+                }              
+                const autoSec = WorkoutManager.getMetaForDate(dStr).activeSeconds || 0;              
+                hint.textContent = `自動計測の記録: ${WorkoutManager.formatDuration(autoSec)}`;              
+                UIManager.toggleModal('edit-time');              
+                setTimeout(() => input.focus(), 50);              
+            },              
+            saveWorkoutTime() {              
+                const dStr = UIManager.state.selectedDate;              
+                const val = document.getElementById('edit-time-input').value.trim();              
+                WorkoutManager.setManualMinutes(dStr, val === '' ? null : val);              
+                UIManager.toggleModal('edit-time');              
+                this.updateSelectedDateCard();              
+                Utility.showToast(val === '' ? '自動計測に戻しました' : 'トレーニング時間を更新しました');              
+            },              
+            clearWorkoutTime() {              
+                const dStr = UIManager.state.selectedDate;              
+                WorkoutManager.setManualMinutes(dStr, null);              
+                UIManager.toggleModal('edit-time');              
+                this.updateSelectedDateCard();              
+                Utility.showToast('自動計測に戻しました');              
             },              
             openSelectedDateWorkout() {              
                 UIManager.switchView('workout');              
