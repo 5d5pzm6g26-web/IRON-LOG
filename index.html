@@ -153,6 +153,43 @@
                 </button>              
             </div>              
               
+            <!-- Daily Training Summary Card (Instagram-ready) -->              
+            <div id="daily-summary-card" class="hidden bg-slate-800 rounded-2xl border border-slate-700 shadow-lg overflow-hidden">              
+                <!-- ヘッダー -->              
+                <div class="px-5 pt-5 pb-3 flex items-end justify-between">              
+                    <div>              
+                        <div class="text-[10px] font-bold text-brand-400 uppercase tracking-[0.2em]">TRAINING SUMMARY</div>              
+                        <div id="summary-date" class="text-lg font-black text-white mt-0.5">--</div>              
+                    </div>              
+                    <div class="text-brand-500/20 text-4xl font-black leading-none -mb-1"><i class="fa-solid fa-dumbbell"></i></div>              
+                </div>              
+                <!-- 数値グリッド -->              
+                <div class="grid grid-cols-3 gap-px bg-slate-700/50">              
+                    <div class="bg-slate-800 px-3 py-4 text-center">              
+                        <div id="summary-time" class="text-2xl font-black text-white font-mono leading-none">--</div>              
+                        <div class="text-[10px] text-slate-400 font-bold mt-1.5">トレーニング時間</div>              
+                    </div>              
+                    <div class="bg-slate-800 px-3 py-4 text-center">              
+                        <div class="text-2xl font-black text-white font-mono leading-none"><span id="summary-volume">0</span><span class="text-xs text-slate-400 font-bold">kg</span></div>              
+                        <div class="text-[10px] text-slate-400 font-bold mt-1.5">総ボリューム</div>              
+                    </div>              
+                    <div class="bg-slate-800 px-3 py-4 text-center">              
+                        <div class="text-2xl font-black text-white font-mono leading-none"><span id="summary-sets">0</span><span class="text-xs text-slate-400 font-bold">set</span></div>              
+                        <div class="text-[10px] text-slate-400 font-bold mt-1.5">総セット数</div>              
+                    </div>              
+                </div>              
+                <!-- 鍛えた部位 -->              
+                <div class="px-5 py-3 border-t border-slate-700/60">              
+                    <div class="text-[10px] font-bold text-slate-400 mb-1.5">鍛えた部位</div>              
+                    <div id="summary-parts" class="flex flex-wrap gap-1.5"></div>              
+                </div>              
+                <!-- メニュー一覧 -->              
+                <div class="px-5 pb-5 pt-1 border-t border-slate-700/60">              
+                    <div class="text-[10px] font-bold text-slate-400 mb-2 mt-2">本日のメニュー</div>              
+                    <div id="summary-menu" class="space-y-2.5"></div>              
+                </div>              
+            </div>              
+
             <!-- Memo Display Card for Selected Date -->              
             <div id="selected-date-memo-card" class="hidden bg-slate-800/90 p-3.5 rounded-2xl border border-amber-500/30 shadow-md space-y-1">              
                 <div class="text-[10px] font-bold text-amber-400 flex items-center gap-1">              
@@ -686,7 +723,8 @@
                 TIMER_PRESETS: 'ironlog_timer_presets',              
                 USER_PROFILE: 'ironlog_user_profile',              
                 GOALS: 'ironlog_goals',  
-                BODY_HISTORY: 'ironlog_body_history' // 修正4：身体データ履歴用キー追加  
+                BODY_HISTORY: 'ironlog_body_history', // 修正4：身体データ履歴用キー追加  
+                WORKOUT_META: 'ironlog_workout_meta' // トレーニング時間などの当日メタ情報  
             },              
             DEFAULT_EXERCISES: [              
                 { id: 'ex1', type: 'normal', name: 'ベンチプレス', part: '胸', bodyweightPct: 0, youtubeUrl: 'https://www.youtube.com/watch?v=vthMCtgVtFw' },              
@@ -790,6 +828,32 @@
                 } catch (e) {              
                     console.error('Error saving workout logs for month', e);              
                 }              
+            },              
+            // 当日メタ情報(トレーニング時間など)を月別キーで保存/読込。ログと同じ分割方式。
+            META_MONTH_PREFIX: 'ironlog_workout_meta__',              
+            loadAllMeta() {              
+                const merged = {};              
+                try {              
+                    for (let i = 0; i < localStorage.length; i++) {              
+                        const key = localStorage.key(i);              
+                        if (key && key.startsWith(this.META_MONTH_PREFIX)) {              
+                            Object.assign(merged, JSON.parse(localStorage.getItem(key)) || {});              
+                        }              
+                    }              
+                } catch (e) { console.error('Error loading workout meta', e); }              
+                return merged;              
+            },              
+            saveMetaForMonth(allMeta, dateStr) {              
+                try {              
+                    const mk = this.monthKeyOf(dateStr);              
+                    const monthData = {};              
+                    Object.keys(allMeta).forEach(d => {              
+                        if (this.monthKeyOf(d) === mk) monthData[d] = allMeta[d];              
+                    });              
+                    const storeKey = this.META_MONTH_PREFIX + mk;              
+                    if (Object.keys(monthData).length === 0) localStorage.removeItem(storeKey);              
+                    else localStorage.setItem(storeKey, JSON.stringify(monthData));              
+                } catch (e) { console.error('Error saving workout meta for month', e); }              
             },              
             clearAllData() {              
                 if (confirm('すべての記録と設定を初期化しますか？この操作は取り消せません。')) {              
@@ -904,9 +968,36 @@
               
             init() {              
                 this.logs = DataManager.loadAllLogs();              
+                this.meta = DataManager.loadAllMeta();              
                 this.memos = DataManager.loadData(DataManager.KEYS.WORKOUT_MEMOS, {});              
                 this.completedDates = DataManager.loadData(DataManager.KEYS.COMPLETED_DATES, {});              
                 this.masterExercises = DataManager.loadData(DataManager.KEYS.MASTER_EXERCISES, DataManager.DEFAULT_EXERCISES);              
+            },              
+            // トレーニング時間の自動計測 -------------------------------------------
+            // 記録画面での操作(数値入力・セット完了・種目追加など)ごとに markActivity() を呼ぶ。
+            // 前回操作からの経過が短ければ加算し、長い空白(手を止めた等)はGAP上限までしか数えない。
+            _lastActivityTs: null,              
+            _activityGapCapMs: 180000, // 3分以上あいたら間の時間は数えない(上限3分だけ計上)
+            getMetaForDate(dateStr) {              
+                return this.meta[dateStr] || { activeSeconds: 0 };              
+            },              
+            markActivity() {              
+                const dateStr = UIManager.state.selectedDate;              
+                if (!dateStr) return;              
+                const now = Date.now();              
+                if (this._lastActivityTs !== null) {              
+                    const gap = now - this._lastActivityTs;              
+                    const add = Math.min(gap, this._activityGapCapMs);              
+                    const m = this.meta[dateStr] || { activeSeconds: 0 };              
+                    m.activeSeconds = (m.activeSeconds || 0) + Math.round(add / 1000);              
+                    this.meta[dateStr] = m;              
+                    DataManager.saveMetaForMonth(this.meta, dateStr);              
+                }              
+                this._lastActivityTs = now;              
+            },              
+            // 記録画面を離れる/開くときに計測の区切りをリセット(空白を持ち越さない)
+            resetActivityClock() {              
+                this._lastActivityTs = null;              
             },              
             getLogsForDate(dateStr) {              
                 return this.logs[dateStr] || [];              
@@ -926,6 +1017,61 @@
                     }              
                 });              
                 return Math.round(total * 10) / 10;              
+            },              
+            // ホームのサマリー用: 時間・総ボリューム・総セット数・鍛えた部位・メニュー一覧を集計
+            calculateDailySummary(dateStr) {              
+                const dayLogs = this.getLogsForDate(dateStr);              
+                const normal = dayLogs.filter(ex => ex.type === 'normal' && ex.sets);              
+                let volume = 0, sets = 0;              
+                const parts = [];              
+                const items = [];              
+                normal.forEach(ex => {              
+                    sets += ex.sets.length;              
+                    ex.sets.forEach(s => {              
+                        volume += (parseFloat(s.weight) || 0) * (parseFloat(s.reps) || 0);              
+                    });              
+                    // 部位: マスター種目からnameで引く
+                    const master = this.masterExercises.find(m => m.name === ex.name);              
+                    if (master && master.part && !parts.includes(master.part)) parts.push(master.part);              
+                    // メニュー表示用の代表値(最頻出の重量×回数、セット数)
+                    items.push(this.summarizeExercise(ex, master));              
+                });              
+                const activeSeconds = (this.getMetaForDate(dateStr).activeSeconds) || 0;              
+                return {              
+                    volume: Math.round(volume * 10) / 10,              
+                    sets,              
+                    parts,              
+                    items,              
+                    activeSeconds,              
+                    exerciseCount: normal.length              
+                };              
+            },              
+            // 1種目を「80kg × 8回 × 3セット」形式に要約(重量が全セット同じでなければ代表値+補足)
+            summarizeExercise(ex, master) {              
+                const setCount = ex.sets.length;              
+                const isBodyweight = master && master.bodyweightPct && master.bodyweightPct > 0;              
+                // 最も多く登場する (weight,reps) の組を代表にする
+                const key = s => `${parseFloat(s.weight)||0}|${parseFloat(s.reps)||0}`;              
+                const counts = {};              
+                ex.sets.forEach(s => { counts[key(s)] = (counts[key(s)] || 0) + 1; });              
+                let repKey = ex.sets[0] ? key(ex.sets[0]) : '0|0';              
+                let max = 0;              
+                Object.keys(counts).forEach(k => { if (counts[k] > max) { max = counts[k]; repKey = k; } });              
+                const [w, r] = repKey.split('|');              
+                const weight = parseFloat(w) || 0;              
+                const reps = parseFloat(r) || 0;              
+                let detail;              
+                if (isBodyweight || weight === 0) {              
+                    detail = `${reps}回 × ${setCount}セット`;              
+                } else {              
+                    detail = `${weight}kg × ${reps}回 × ${setCount}セット`;              
+                }              
+                return { name: ex.name, detail };              
+            },              
+            formatDuration(sec) {              
+                if (!sec || sec < 60) return `${sec || 0}秒`;              
+                const m = Math.floor(sec / 60);              
+                return `${m}分`;              
             },              
             renderWorkoutView() {              
                 const activeDate = UIManager.state.selectedDate;              
@@ -1134,6 +1280,7 @@
                 this.renderWorkoutView();              
             },              
             addExerciseToActiveDate(masterEx) {              
+                this.markActivity();              
                 const activeDate = UIManager.state.selectedDate;              
                 const dayLogs = this.getLogsForDate(activeDate);              
               
@@ -1173,6 +1320,7 @@
                 this.refreshCard(exIdx);              
             },              
             addSet(exIdx) {              
+                this.markActivity();              
                 const activeDate = UIManager.state.selectedDate;              
                 const dayLogs = this.getLogsForDate(activeDate);              
                 const ex = dayLogs[exIdx];              
@@ -1196,6 +1344,7 @@
                 this.renderWorkoutView();              
             },              
             toggleSetComplete(exIdx, setIdx) {              
+                this.markActivity();              
                 const activeDate = UIManager.state.selectedDate;              
                 const dayLogs = this.getLogsForDate(activeDate);              
                 const set = dayLogs[exIdx].sets[setIdx];              
@@ -1391,6 +1540,47 @@
                 } else {              
                     memoCard.classList.add('hidden');              
                 }              
+
+                this.updateSummaryCard(dStr, hasLogs);              
+            },              
+            // ホームのトレーニングサマリーカードを更新
+            updateSummaryCard(dStr, hasLogs) {              
+                const card = document.getElementById('daily-summary-card');              
+                const s = WorkoutManager.calculateDailySummary(dStr);              
+                // 記録が無い(通常種目0件)日は非表示
+                if (!hasLogs || s.exerciseCount === 0) {              
+                    card.classList.add('hidden');              
+                    return;              
+                }              
+                card.classList.remove('hidden');              
+
+                // 日付見出し(例: 7月17日(金))
+                const d = new Date(dStr + 'T00:00:00');              
+                const wd = ['日','月','火','水','木','金','土'][d.getDay()];              
+                document.getElementById('summary-date').textContent = `${d.getMonth()+1}月${d.getDate()}日(${wd})`;              
+
+                document.getElementById('summary-time').textContent = WorkoutManager.formatDuration(s.activeSeconds);              
+                document.getElementById('summary-volume').textContent = s.volume.toLocaleString();              
+                document.getElementById('summary-sets').textContent = s.sets;              
+
+                // 部位タグ
+                const partsEl = document.getElementById('summary-parts');              
+                if (s.parts.length === 0) {              
+                    partsEl.innerHTML = '<span class="text-[11px] text-slate-500">--</span>';              
+                } else {              
+                    partsEl.innerHTML = s.parts.map(p =>              
+                        `<span class="px-2.5 py-1 rounded-lg bg-brand-500/15 text-brand-400 text-[11px] font-bold border border-brand-500/20">${p}</span>`              
+                    ).join('');              
+                }              
+
+                // メニュー一覧
+                const menuEl = document.getElementById('summary-menu');              
+                menuEl.innerHTML = s.items.map(it => `              
+                    <div class="flex items-baseline justify-between gap-2">              
+                        <span class="text-sm font-bold text-slate-100 truncate">${it.name}</span>              
+                        <span class="text-xs text-slate-400 font-mono whitespace-nowrap flex-shrink-0">${it.detail}</span>              
+                    </div>              
+                `).join('');              
             },              
             openSelectedDateWorkout() {              
                 UIManager.switchView('workout');              
@@ -1938,6 +2128,7 @@
             },              
             switchView(viewName) {              
                 WorkoutManager.flushSave();              
+                WorkoutManager.resetActivityClock();              
                 this.state.currentView = viewName;              
                 ['calendar', 'workout', 'timer', 'analytics', 'settings'].forEach(v => {              
                     const section = document.getElementById(`view-${v}`);              
@@ -2019,6 +2210,7 @@
             },              
             pressKey(key) {              
                 if (this.state.activeExIndex === null || this.state.activeSetIndex === null) return;              
+                WorkoutManager.markActivity();              
                 const activeDate = this.state.selectedDate;              
                 const dayLogs = WorkoutManager.getLogsForDate(activeDate);              
                 const set = dayLogs[this.state.activeExIndex].sets[this.state.activeSetIndex];              
