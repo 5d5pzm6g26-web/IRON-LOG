@@ -36,6 +36,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">              
     <!-- Chart.js -->              
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>              
+    <!-- html2canvas: サマリーカードの画像保存用 -->              
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>              
     <style>              
         body {              
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;              
@@ -188,6 +190,16 @@
                     <div class="text-[10px] font-bold text-slate-400 mb-2 mt-2">本日のメニュー</div>              
                     <div id="summary-menu" class="space-y-2.5"></div>              
                 </div>              
+            </div>              
+
+            <!-- Summary Share Actions (画像/テキスト保存) -->              
+            <div id="summary-actions" class="hidden grid grid-cols-2 gap-2">              
+                <button onclick="CalendarManager.saveSummaryImage()" class="py-3 rounded-xl bg-gradient-to-r from-brand-500 to-amber-500 hover:from-brand-600 hover:to-amber-600 active:scale-98 text-white font-black text-xs flex items-center justify-center gap-2 shadow-lg shadow-brand-500/20 transition">              
+                    <i class="fa-solid fa-image"></i> 画像として保存              
+                </button>              
+                <button onclick="CalendarManager.copySummaryText()" class="py-3 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-98 text-slate-200 font-black text-xs flex items-center justify-center gap-2 border border-slate-700 transition">              
+                    <i class="fa-solid fa-clipboard"></i> テキストをコピー              
+                </button>              
             </div>              
 
             <!-- Memo Display Card for Selected Date -->              
@@ -1158,6 +1170,37 @@
                 const m = Math.floor(sec / 60);              
                 return `${m}分`;              
             },              
+            // SNS共有用テキストを生成(1セットずつ列挙する形式)
+            buildSummaryText(dateStr) {              
+                const dayLogs = this.getLogsForDate(dateStr);              
+                const lines = [];              
+                lines.push(`${dateStr} トレーニング記録`);              
+                lines.push('');              
+                dayLogs.forEach(ex => {              
+                    if (ex.type === 'youtube') {              
+                        // YouTube種目は名前のみ(1行)
+                        lines.push(ex.name);              
+                        lines.push('');              
+                        return;              
+                    }              
+                    if (!ex.sets || ex.sets.length === 0) return;              
+                    lines.push(ex.name);              
+                    ex.sets.forEach((s, i) => {              
+                        const w = parseFloat(s.weight) || 0;              
+                        const r = parseFloat(s.reps) || 0;              
+                        if (w > 0) {              
+                            lines.push(`${i + 1}セット: ${w}kg ${r}回 `);              
+                        } else {              
+                            lines.push(`${i + 1}セット: ${r}回 `);              
+                        }              
+                    });              
+                    lines.push('');              
+                });              
+                lines.push('#筋トレ');              
+                lines.push('#筋トレ記録');              
+                lines.push('#IRONLOG');              
+                return lines.join('\n');              
+            },              
             renderWorkoutView() {              
                 const activeDate = UIManager.state.selectedDate;              
                 document.getElementById('workout-active-date').textContent = activeDate;              
@@ -1655,13 +1698,16 @@
             // ホームのトレーニングサマリーカードを更新
             updateSummaryCard(dStr, hasLogs) {              
                 const card = document.getElementById('daily-summary-card');              
+                const actions = document.getElementById('summary-actions');              
                 const s = WorkoutManager.calculateDailySummary(dStr);              
                 // 記録が無い(通常種目0件)日は非表示
                 if (!hasLogs || s.exerciseCount === 0) {              
                     card.classList.add('hidden');              
+                    if (actions) actions.classList.add('hidden');              
                     return;              
                 }              
                 card.classList.remove('hidden');              
+                if (actions) actions.classList.remove('hidden');              
 
                 // 日付見出し(例: 7月17日(金))
                 const d = new Date(dStr + 'T00:00:00');              
@@ -1726,6 +1772,63 @@
             },              
             openSelectedDateWorkout() {              
                 UIManager.switchView('workout');              
+            },              
+            // テキストをコピー(失敗時は選択可能なテキストで代替) + .txt保存も可能に
+            copySummaryText() {              
+                const dStr = UIManager.state.selectedDate;              
+                const text = WorkoutManager.buildSummaryText(dStr);              
+                const done = () => Utility.showToast('テキストをコピーしました');              
+                if (navigator.clipboard && navigator.clipboard.writeText) {              
+                    navigator.clipboard.writeText(text).then(done).catch(() => this._fallbackCopy(text, done));              
+                } else {              
+                    this._fallbackCopy(text, done);              
+                }              
+            },              
+            _fallbackCopy(text, done) {              
+                try {              
+                    const ta = document.createElement('textarea');              
+                    ta.value = text;              
+                    ta.style.position = 'fixed';              
+                    ta.style.opacity = '0';              
+                    document.body.appendChild(ta);              
+                    ta.focus(); ta.select();              
+                    document.execCommand('copy');              
+                    document.body.removeChild(ta);              
+                    done();              
+                } catch (e) {              
+                    Utility.showToast('コピーできませんでした');              
+                }              
+            },              
+            // サマリーカードを画像(PNG)として保存
+            saveSummaryImage() {              
+                const card = document.getElementById('daily-summary-card');              
+                if (typeof html2canvas === 'undefined') {              
+                    Utility.showToast('画像機能を読み込めませんでした');              
+                    return;              
+                }              
+                Utility.showToast('画像を生成中...');              
+                html2canvas(card, {              
+                    backgroundColor: '#1e293b', // slate-800 でカード周囲を塗る
+                    scale: window.devicePixelRatio > 1 ? 2 : 1.5,              
+                    useCORS: true,              
+                    logging: false              
+                }).then(canvas => {              
+                    const dStr = UIManager.state.selectedDate;              
+                    canvas.toBlob(blob => {              
+                        if (!blob) { Utility.showToast('画像の生成に失敗しました'); return; }              
+                        const url = URL.createObjectURL(blob);              
+                        const a = document.createElement('a');              
+                        a.href = url;              
+                        a.download = `ironlog_${dStr}.png`;              
+                        document.body.appendChild(a);              
+                        a.click();              
+                        document.body.removeChild(a);              
+                        setTimeout(() => URL.revokeObjectURL(url), 1000);              
+                        Utility.showToast('画像を保存しました');              
+                    }, 'image/png');              
+                }).catch(() => {              
+                    Utility.showToast('画像の生成に失敗しました');              
+                });              
             }              
         };              
               
