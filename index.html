@@ -1871,16 +1871,16 @@
                 const rest = s.items.length - shown.length;              
 
                 const partsHtml = s.parts.length              
-                    ? s.parts.map(p => `<span style="display:inline-block;padding:10px 22px;margin:0 10px 10px 0;border-radius:14px;background:rgba(249,115,22,0.15);color:#fb923c;font-size:30px;font-weight:800;border:2px solid rgba(249,115,22,0.25);">${p}</span>`).join('')              
+                    ? s.parts.map(p => `<span style="display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;min-width:88px;height:64px;padding:0 20px;margin:0 10px 10px 0;border-radius:14px;background:rgba(249,115,22,0.15);color:#fb923c;font-size:30px;font-weight:800;line-height:1;border:2px solid rgba(249,115,22,0.25);vertical-align:top;">${p}</span>`).join('')              
                     : '<span style="color:#64748b;font-size:28px;">--</span>';              
 
                 const menuRows = shown.map(it => {              
                     const right = it.weight > 0              
                         ? `<span style="color:#fb923c;">${it.weight}</span><span style="color:#94a3b8;font-size:26px;">kg</span> <span style="color:#475569;">×</span> ${it.reps}<span style="color:#94a3b8;font-size:26px;">回</span> <span style="color:#475569;">×</span> ${it.setCount}<span style="color:#94a3b8;font-size:26px;">セット</span>`              
                         : `${it.reps}<span style="color:#94a3b8;font-size:26px;">回</span> <span style="color:#475569;">×</span> ${it.setCount}<span style="color:#94a3b8;font-size:26px;">セット</span>`;              
-                    return `<div style="display:flex;justify-content:space-between;align-items:baseline;gap:20px;padding:16px 0;border-bottom:1px solid rgba(51,65,85,0.4);">
-                        <span style="font-size:34px;font-weight:800;color:#f1f5f9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:520px;">${it.name}</span>
-                        <span style="font-size:30px;font-weight:700;color:#cbd5e1;font-family:'SF Mono',ui-monospace,monospace;white-space:nowrap;flex-shrink:0;">${right}</span>
+                    return `<div style="display:flex;justify-content:space-between;align-items:center;gap:20px;padding:14px 0;border-bottom:1px solid rgba(51,65,85,0.4);">
+                        <span style="font-size:34px;font-weight:800;color:#f1f5f9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:520px;line-height:1.6;padding:2px 0;">${it.name}</span>
+                        <span style="font-size:30px;font-weight:700;color:#cbd5e1;font-family:'SF Mono',ui-monospace,monospace;white-space:nowrap;flex-shrink:0;line-height:1.6;padding:2px 0;">${right}</span>
                     </div>`;              
                 }).join('');              
 
@@ -1894,7 +1894,7 @@
                     <div style="display:flex;justify-content:space-between;align-items:flex-start;">
                         <div>
                             <div style="font-size:30px;font-weight:800;color:#fb923c;letter-spacing:0.25em;">TRAINING SUMMARY</div>
-                            <div style="font-size:64px;font-weight:900;color:#ffffff;margin-top:8px;">${dateLabel}</div>
+                            <div style="font-size:64px;font-weight:900;color:#ffffff;margin-top:8px;line-height:1.3;padding:2px 0;">${dateLabel}</div>
                         </div>
                         <div style="width:110px;height:110px;flex-shrink:0;">
                             <svg viewBox="0 0 640 512" width="110" height="110" xmlns="http://www.w3.org/2000/svg" fill="rgba(249,115,22,0.28)"><path d="M96 64c0-17.7 14.3-32 32-32h32c17.7 0 32 14.3 32 32v160 64V448c0 17.7-14.3 32-32 32H128c-17.7 0-32-14.3-32-32V384H64c-17.7 0-32-14.3-32-32V320c-17.7 0-32-14.3-32-32s14.3-32 32-32V224c0-17.7 14.3-32 32-32H96V128 64zm448 0v64 64h32c17.7 0 32 14.3 32 32v32c17.7 0 32 14.3 32 32s-14.3 32-32 32v32c0 17.7-14.3 32-32 32H544v64c0 17.7-14.3 32-32 32H480c-17.7 0-32-14.3-32-32V320 256 224 64c0-17.7 14.3-32 32-32h32c17.7 0 32 14.3 32 32zM224 224H416V288H224V224z"/></svg>
@@ -1902,17 +1902,17 @@
                     </div>
                     <div style="display:flex;gap:0;margin-top:56px;border-top:1px solid rgba(51,65,85,0.5);border-bottom:1px solid rgba(51,65,85,0.5);">
                         <div style="flex:1;text-align:center;padding:40px 10px;">
-                            <div style="font-size:72px;font-weight:900;color:#fff;line-height:1;">${timeLabel}</div>
+                            <div style="font-size:72px;font-weight:900;color:#fff;line-height:1.2;padding:4px 0;">${timeLabel}</div>
                             <div style="font-size:28px;color:#94a3b8;font-weight:700;margin-top:16px;">トレーニング時間</div>
                         </div>
                         <div style="width:1px;background:rgba(51,65,85,0.5);"></div>
                         <div style="flex:1;text-align:center;padding:40px 10px;">
-                            <div style="font-size:72px;font-weight:900;color:#fff;line-height:1;">${s.volume.toLocaleString()}<span style="font-size:34px;color:#94a3b8;">kg</span></div>
+                            <div style="font-size:72px;font-weight:900;color:#fff;line-height:1.2;padding:4px 0;">${s.volume.toLocaleString()}<span style="font-size:34px;color:#94a3b8;">kg</span></div>
                             <div style="font-size:28px;color:#94a3b8;font-weight:700;margin-top:16px;">総ボリューム</div>
                         </div>
                         <div style="width:1px;background:rgba(51,65,85,0.5);"></div>
                         <div style="flex:1;text-align:center;padding:40px 10px;">
-                            <div style="font-size:72px;font-weight:900;color:#fff;line-height:1;">${s.sets}<span style="font-size:34px;color:#94a3b8;">set</span></div>
+                            <div style="font-size:72px;font-weight:900;color:#fff;line-height:1.2;padding:4px 0;">${s.sets}<span style="font-size:34px;color:#94a3b8;">set</span></div>
                             <div style="font-size:28px;color:#94a3b8;font-weight:700;margin-top:16px;">総セット数</div>
                         </div>
                     </div>
