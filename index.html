@@ -240,7 +240,7 @@
             </div>              
               
             <button onclick="WorkoutManager.openCopyModal()" class="w-full py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700/80 text-slate-200 font-bold flex items-center justify-center gap-2 transition text-xs border border-slate-700/80 shadow-sm active:scale-98">              
-                <i class="fa-solid fa-copy text-amber-400"></i> 過去の記録からメニューをコピー              
+                <i class="fa-solid fa-copy text-amber-400"></i> 過去1ヶ月の記録をコピー              
             </button>              
               
             <!-- Exercises List Container -->              
@@ -539,7 +539,7 @@
     <div id="modal-copy-date" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">              
         <div class="bg-slate-800 border border-slate-700 w-full max-w-sm rounded-2xl p-4 space-y-3 max-h-[80vh] flex flex-col">              
             <div class="flex justify-between items-center border-b border-slate-700/60 pb-2">              
-                <h3 class="font-bold text-white text-sm"><i class="fa-solid fa-copy text-amber-400 mr-2"></i>過去の記録からコピー</h3>              
+                <h3 class="font-bold text-white text-sm"><i class="fa-solid fa-copy text-amber-400 mr-2"></i>過去1ヶ月の記録をコピー</h3>              
                 <button onclick="UIManager.toggleModal('copy-date')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>              
             </div>              
             <div id="copy-date-list" class="flex-1 overflow-y-auto space-y-2 pr-1 my-1"></div>              
@@ -1150,6 +1150,11 @@
             saveLogsForDate(dateStr, exerciseList) {              
                 this.logs[dateStr] = exerciseList;              
                 DataManager.saveLogsForMonth(this.logs, dateStr);              
+                // 記録が0件になったら「トレーニング完了」フラグも解除する(カレンダーの緑マークが残るのを防ぐ)              
+                if (exerciseList.length === 0 && this.completedDates[dateStr]) {              
+                    delete this.completedDates[dateStr];              
+                    DataManager.saveData(DataManager.KEYS.COMPLETED_DATES, this.completedDates);              
+                }              
             },              
             calculateDailyVolume(dateStr) {              
                 const dayLogs = this.getLogsForDate(dateStr);              
@@ -1270,16 +1275,16 @@
                 const activeDate = UIManager.state.selectedDate;              
                 document.getElementById('workout-active-date').textContent = activeDate;              
                 document.getElementById('daily-total-volume').textContent = this.calculateDailyVolume(activeDate);              
-              
+
                 const container = document.getElementById('workout-exercise-list-container');              
                 container.innerHTML = '';              
-              
+
                 const dayLogs = this.getLogsForDate(activeDate);              
                 if (dayLogs.length === 0) {              
                     container.innerHTML = `<div class="text-center py-8 text-slate-500 text-xs font-bold">メニューや動画がまだ追加されていません</div>`;              
                     return;              
                 }              
-              
+
                 dayLogs.forEach((ex, exIdx) => {              
                     const card = document.createElement('div');              
                     card.className = 'bg-slate-800 p-3.5 rounded-2xl border border-slate-700 space-y-2.5 shadow-md';              
@@ -1697,19 +1702,44 @@
             openCopyModal() {              
                 const listContainer = document.getElementById('copy-date-list');              
                 listContainer.innerHTML = '';              
-                const dates = Object.keys(this.logs).filter(d => d !== UIManager.state.selectedDate && this.logs[d].length > 0).sort().reverse();              
+                // 直近1ヶ月(30日)以内の記録のみを対象にする              
+                const oneMonthAgo = new Date();              
+                oneMonthAgo.setDate(oneMonthAgo.getDate() - 30);              
+                const cutoffStr = Utility.formatDate(oneMonthAgo);              
+                const dates = Object.keys(this.logs)              
+                    .filter(d => d !== UIManager.state.selectedDate && this.logs[d].length > 0 && d >= cutoffStr)              
+                    .sort().reverse();              
                 if (dates.length === 0) {              
-                    listContainer.innerHTML = `<div class="text-center py-4 text-slate-500 text-xs">コピー可能な過去の記録がありません</div>`;              
+                    listContainer.innerHTML = `<div class="text-center py-4 text-slate-500 text-xs">コピー可能な過去1ヶ月の記録がありません</div>`;              
                 } else {              
                     dates.forEach(d => {              
+                        const parts = this.getPartsForDate(d);              
+                        const partsHtml = parts.length              
+                            ? parts.map(p => `<span class="px-1.5 py-0.5 rounded bg-brand-500/15 text-brand-400 text-[9px] font-bold border border-brand-500/20">${p}</span>`).join('')              
+                            : `<span class="text-[10px] text-slate-500">--</span>`;              
                         const btn = document.createElement('button');              
                         btn.className = 'w-full p-2.5 bg-slate-700/60 hover:bg-slate-700 rounded-xl flex justify-between items-center text-xs text-white font-bold transition';              
-                        btn.innerHTML = `<span>${d}</span><span class="text-[10px] text-brand-400">${this.logs[d].length} 項目</span>`;              
+                        btn.innerHTML = `<span>${d}</span><span class="flex gap-1 flex-wrap justify-end">${partsHtml}</span>`;              
                         btn.onclick = () => this.copyWorkoutFromDate(d);              
                         listContainer.appendChild(btn);              
                     });              
                 }              
                 UIManager.toggleModal('copy-date');              
+            },              
+            // 指定日の「鍛えた部位」一覧を返す(通常種目+部位設定済みYouTube種目)              
+            getPartsForDate(dateStr) {              
+                const dayLogs = this.getLogsForDate(dateStr);              
+                const parts = [];              
+                dayLogs.forEach(ex => {              
+                    if (ex.type === 'normal') {              
+                        const master = this.masterExercises.find(m => m.name === ex.name);              
+                        if (master && master.part && !parts.includes(master.part)) parts.push(master.part);              
+                    } else if (ex.type === 'youtube') {              
+                        const master = this.masterExercises.find(m => m.name === ex.name && m.type === 'youtube');              
+                        if (master && master.part && !parts.includes(master.part)) parts.push(master.part);              
+                    }              
+                });              
+                return parts;              
             },              
             copyWorkoutFromDate(sourceDate) {              
                 const activeDate = UIManager.state.selectedDate;              
@@ -1774,7 +1804,7 @@
                     else if (isToday) bgClass = 'border border-brand-500 text-brand-400 font-bold';              
               
                     let dotHtml = '';              
-                    if (isCompleted) dotHtml = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 mt-0.5"></span>`;              
+                    if (isCompleted && hasLogs) dotHtml = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 mt-0.5"></span>`;              
                     else if (hasLogs) dotHtml = `<span class="w-1.5 h-1.5 rounded-full bg-amber-400 mt-0.5"></span>`;              
               
                     dayEl.className = `h-10 rounded-xl flex flex-col items-center justify-center font-mono font-bold transition ${bgClass}`;              
