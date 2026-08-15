@@ -1998,12 +1998,12 @@
                 const menuRows = shown.map(it => {              
                     // 長い種目名はJS側で切り詰め(html2canvasのoverflowクリップに頼らない=下端が切れない)
                     if (it.isYoutube) {              
-                        // YouTube種目: 左に種目名、右に動画タイトル。両方切り詰めて左右バランスを取る
+                        // YouTube種目: 左に部位名、右に動画タイトル。両方切り詰めて左右バランスを取る
                         const dispName = it.name.length > 10 ? it.name.slice(0, 9) + '…' : it.name;              
                         const dispTitle = it.detail.length > 16 ? it.detail.slice(0, 15) + '…' : it.detail;              
                         return `<div style="display:flex;justify-content:space-between;align-items:center;gap:20px;padding:16px 0;border-bottom:1px solid rgba(51,65,85,0.4);">
                             <span style="font-size:34px;font-weight:800;color:#f1f5f9;white-space:nowrap;flex-shrink:0;">${dispName}</span>
-                            <span style="font-size:26px;font-weight:700;color:#94a3b8;white-space:nowrap;overflow:hidden;">${dispTitle}</span>
+                            <span style="font-size:26px;font-weight:700;color:#94a3b8;white-space:nowrap;flex-shrink:0;max-width:600px;overflow:visible;">${dispTitle}</span>
                         </div>`;              
                     }              
                     const right = it.weight > 0              
