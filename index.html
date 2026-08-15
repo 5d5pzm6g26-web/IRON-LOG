@@ -1184,21 +1184,17 @@
                         return;              
                     }              
                     if (!ex.sets || ex.sets.length === 0) return;              
+                    const master = this.masterExercises.find(m => m.name === ex.name);              
+                    const sum = this.summarizeExercise(ex, master);              
+                    // 「重量×回数×セット数」の1行にまとめる(例: 60kg×10回×3セット)
+                    const detail = sum.weight > 0              
+                        ? `${sum.weight}kg×${sum.reps}回×${sum.setCount}セット`              
+                        : `${sum.reps}回×${sum.setCount}セット`;              
                     lines.push(ex.name);              
-                    ex.sets.forEach((s, i) => {              
-                        const w = parseFloat(s.weight) || 0;              
-                        const r = parseFloat(s.reps) || 0;              
-                        if (w > 0) {              
-                            lines.push(`${i + 1}セット: ${w}kg ${r}回 `);              
-                        } else {              
-                            lines.push(`${i + 1}セット: ${r}回 `);              
-                        }              
-                    });              
+                    lines.push(detail);              
                     lines.push('');              
                 });              
-                lines.push('#筋トレ');              
-                lines.push('#筋トレ記録');              
-                lines.push('#IRONLOG');              
+                lines.push('#筋トレ #筋トレ記録 #IRONLOG');              
                 return lines.join('\n');              
             },              
             renderWorkoutView() {              
