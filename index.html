@@ -526,7 +526,7 @@
                 <button onclick="WorkoutManager.filterExercises('肩')" class="part-filter-btn px-3 py-1 rounded-full bg-slate-700 text-slate-300 hover:bg-slate-600 whitespace-nowrap">肩</button>              
                 <button onclick="WorkoutManager.filterExercises('腕')" class="part-filter-btn px-3 py-1 rounded-full bg-slate-700 text-slate-300 hover:bg-slate-600 whitespace-nowrap">腕</button>              
                 <button onclick="WorkoutManager.filterExercises('腹筋')" class="part-filter-btn px-3 py-1 rounded-full bg-slate-700 text-slate-300 hover:bg-slate-600 whitespace-nowrap">腹筋</button>              
-                <button onclick="WorkoutManager.filterExercises('youtube')" class="part-filter-btn px-3 py-1 rounded-full bg-rose-500/20 text-rose-400 hover:bg-rose-500/30 whitespace-nowrap"><i class="fa-brands fa-youtube mr-1"></i>YouTube</button>              
+                <button onclick="WorkoutManager.filterExercises('youtube')" class="part-filter-btn px-3 py-1 rounded-full bg-slate-700 text-slate-300 hover:bg-slate-600 whitespace-nowrap">その他</button>              
             </div>              
             <div id="master-exercise-list" class="flex-1 overflow-y-auto space-y-2 pr-1 my-1"></div>              
             <button onclick="UIManager.toggleModal('select-exercise'); UIManager.switchView('settings');" class="w-full py-2 bg-slate-700/70 hover:bg-slate-700 border border-slate-600/80 text-slate-300 font-bold rounded-xl text-xs transition flex items-center justify-center gap-1.5">              
@@ -673,6 +673,45 @@
             <div class="flex gap-2 pt-2">              
                 <button onclick="UIManager.toggleModal('delete-confirm')" class="flex-1 py-2.5 bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold rounded-xl text-xs transition">キャンセル</button>              
                 <button onclick="WorkoutManager.executeDeleteMasterExercise()" class="flex-1 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-black rounded-xl text-xs shadow-md transition">削除</button>              
+            </div>              
+        </div>              
+    </div>              
+
+    <!-- Edit Master Exercise Modal -->              
+    <div id="modal-edit-exercise" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">              
+        <div class="bg-slate-800 border border-slate-700 w-full max-w-sm rounded-2xl p-4 space-y-3">              
+            <div class="flex justify-between items-center border-b border-slate-700/60 pb-2">              
+                <h3 class="font-bold text-white text-sm"><i class="fa-solid fa-pen text-brand-400 mr-2"></i>種目を編集</h3>              
+                <button onclick="UIManager.toggleModal('edit-exercise')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>              
+            </div>              
+            <input type="hidden" id="edit-ex-index" value="-1">              
+            <input type="text" id="edit-ex-name" placeholder="種目名" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">              
+            <div id="edit-ex-normal-fields" class="grid grid-cols-2 gap-2">              
+                <select id="edit-ex-part" class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">              
+                    <option value="胸">胸</option>              
+                    <option value="背中">背中</option>              
+                    <option value="脚">脚</option>              
+                    <option value="肩">肩</option>              
+                    <option value="腕">腕</option>              
+                    <option value="腹筋">腹筋</option>              
+                </select>              
+                <input type="number" id="edit-ex-bw" placeholder="自重負荷率(%)" class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">              
+            </div>              
+            <div id="edit-ex-youtube-part-field" class="hidden">              
+                <select id="edit-ex-yt-part" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">              
+                    <option value="">部位（任意）</option>              
+                    <option value="胸">胸</option>              
+                    <option value="背中">背中</option>              
+                    <option value="脚">脚</option>              
+                    <option value="肩">肩</option>              
+                    <option value="腕">腕</option>              
+                    <option value="腹筋">腹筋</option>              
+                </select>              
+            </div>              
+            <input type="text" id="edit-ex-youtube" placeholder="YouTube URL" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">              
+            <div class="flex gap-2 pt-1">              
+                <button onclick="UIManager.toggleModal('edit-exercise')" class="flex-1 py-2.5 bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold rounded-xl text-xs transition">キャンセル</button>              
+                <button onclick="WorkoutManager.saveEditedMasterExercise()" class="flex-1 py-2.5 bg-gradient-to-r from-brand-500 to-amber-500 hover:from-brand-600 hover:to-amber-600 text-white font-black rounded-xl text-xs shadow-md transition">保存</button>              
             </div>              
         </div>              
     </div>              
@@ -1540,7 +1579,7 @@
                 this.currentFilterPart = part;              
                 document.querySelectorAll('.part-filter-btn').forEach(btn => {              
                     const isTarget = (part === 'ALL' && btn.textContent === 'すべて') ||               
-                                     (part === 'youtube' && btn.textContent.includes('YouTube')) ||               
+                                     (part === 'youtube' && btn.textContent === 'その他') ||               
                                      (btn.textContent === part);              
                     if (isTarget) {              
                         btn.className = 'part-filter-btn active px-3 py-1 rounded-full bg-brand-500 text-white whitespace-nowrap';              
@@ -1555,7 +1594,8 @@
                 listEl.innerHTML = '';              
                 const filtered = this.masterExercises.filter(ex => {              
                     if (this.currentFilterPart === 'ALL') return true;              
-                    if (this.currentFilterPart === 'youtube') return ex.type === 'youtube';              
+                    if (this.currentFilterPart === 'youtube') return ex.type === 'youtube' && !ex.part; // その他: 部位未設定のYouTube種目              
+                    if (ex.type === 'youtube') return ex.part === this.currentFilterPart; // 部位設定済みYouTube種目は該当部位タブにも表示              
                     return ex.type === 'normal' && ex.part === this.currentFilterPart;              
                 });              
               
@@ -1571,20 +1611,75 @@
                       
                     let leftHtml = '';  
                     if (ex.type === 'youtube') {              
-                        leftHtml = `<div class="flex items-center gap-2 truncate cursor-pointer flex-1 min-w-0" onclick="WorkoutManager.addExerciseToActiveDate(WorkoutManager.masterExercises[${actualIdx}])"><span class="px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-400 text-[10px]"><i class="fa-brands fa-youtube"></i></span><span class="truncate">${ex.name}</span></div><span class="text-[10px] text-rose-400 mr-2">YouTube</span>`;              
+                        const partBadge = ex.part ? `<span class="text-[10px] text-slate-400 px-2 py-0.5 bg-slate-800 rounded-md">${ex.part}</span>` : '';              
+                        leftHtml = `<div class="flex items-center gap-2 truncate cursor-pointer flex-1 min-w-0" onclick="WorkoutManager.addExerciseToActiveDate(WorkoutManager.masterExercises[${actualIdx}])"><span class="px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-400 text-[10px]"><i class="fa-brands fa-youtube"></i></span><span class="truncate">${ex.name}</span>${partBadge}</div><span class="text-[10px] text-rose-400 mr-2">YouTube</span>`;              
                     } else {              
                         leftHtml = `<div class="flex items-center gap-2 truncate cursor-pointer flex-1 min-w-0" onclick="WorkoutManager.addExerciseToActiveDate(WorkoutManager.masterExercises[${actualIdx}])"><span class="truncate">${ex.name}</span><span class="text-[10px] text-slate-400 px-2 py-0.5 bg-slate-800 rounded-md">${ex.part}</span></div>`;              
                     }              
   
                     const deleteBtnHtml = `<button onclick="WorkoutManager.confirmDeleteMasterExercise(${actualIdx})" class="text-slate-400 hover:text-rose-400 p-1 shrink-0 ml-2" title="削除"><i class="fa-solid fa-trash-can text-xs"></i></button>`;  
+                    const editBtnHtml = `<button onclick="WorkoutManager.editMasterExercise(${actualIdx})" class="text-slate-400 hover:text-brand-400 p-1 shrink-0 ml-1" title="編集"><i class="fa-solid fa-pen text-xs"></i></button>`;  
   
-                    item.innerHTML = leftHtml + deleteBtnHtml;              
+                    item.innerHTML = leftHtml + editBtnHtml + deleteBtnHtml;              
                     listEl.appendChild(item);              
                 });              
             },              
             confirmDeleteMasterExercise(idx) {  
                 document.getElementById('delete-target-index').value = idx;  
                 UIManager.toggleModal('delete-confirm');  
+            },  
+            editMasterExercise(idx) {  
+                const ex = this.masterExercises[idx];  
+                if (!ex) return;  
+                document.getElementById('edit-ex-index').value = idx;  
+                document.getElementById('edit-ex-name').value = ex.name || '';  
+                document.getElementById('edit-ex-youtube').value = ex.type === 'youtube' ? (ex.url || '') : (ex.youtubeUrl || '');  
+                const normalFields = document.getElementById('edit-ex-normal-fields');  
+                const ytPartField = document.getElementById('edit-ex-youtube-part-field');  
+                if (ex.type === 'youtube') {  
+                    normalFields.classList.add('hidden');  
+                    ytPartField.classList.remove('hidden');  
+                    document.getElementById('edit-ex-yt-part').value = ex.part || '';  
+                } else {  
+                    normalFields.classList.remove('hidden');  
+                    ytPartField.classList.add('hidden');  
+                    document.getElementById('edit-ex-part').value = ex.part || '胸';  
+                    document.getElementById('edit-ex-bw').value = ex.bodyweightPct || '';  
+                }  
+                UIManager.toggleModal('edit-exercise');  
+            },  
+            saveEditedMasterExercise() {  
+                const idx = parseInt(document.getElementById('edit-ex-index').value);  
+                if (isNaN(idx) || idx < 0 || idx >= this.masterExercises.length) return;  
+                const ex = this.masterExercises[idx];  
+                const name = document.getElementById('edit-ex-name').value.trim();  
+                if (!name) {  
+                    alert('種目名を入力してください');  
+                    return;  
+                }  
+                ex.name = name;  
+                if (ex.type === 'youtube') {  
+                    const url = document.getElementById('edit-ex-youtube').value.trim();  
+                    const videoId = Utility.extractYouTubeId(url);  
+                    if (!videoId) {  
+                        alert('有効なYouTube URLを入力してください');  
+                        return;  
+                    }  
+                    ex.url = url;  
+                    ex.videoId = videoId;  
+                    ex.thumbnail = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;  
+                    const part = document.getElementById('edit-ex-yt-part').value;  
+                    if (part) ex.part = part; else delete ex.part;  
+                } else {  
+                    ex.part = document.getElementById('edit-ex-part').value;  
+                    ex.bodyweightPct = parseFloat(document.getElementById('edit-ex-bw').value) || 0;  
+                    ex.youtubeUrl = document.getElementById('edit-ex-youtube').value.trim();  
+                }  
+                DataManager.saveData(DataManager.KEYS.MASTER_EXERCISES, this.masterExercises);  
+                UIManager.toggleModal('edit-exercise');  
+                this.renderMasterExerciseList();  
+                StatisticsManager.populateExerciseSelect();  
+                Utility.showToast(`種目「${name}」を更新しました`);  
             },  
             executeDeleteMasterExercise() {  
                 const idx = parseInt(document.getElementById('delete-target-index').value);  
