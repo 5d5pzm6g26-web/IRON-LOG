@@ -1875,23 +1875,23 @@
                 const timeLabel = WorkoutManager.formatDuration(s.activeSeconds);              
 
                 // メニューは最大6種目まで表示。超過分は「他N種目」で省略
-                const MAX_ITEMS = 4;              
+                const MAX_ITEMS = 6;              
                 const shown = s.items.slice(0, MAX_ITEMS);              
                 const rest = s.items.length - shown.length;              
 
                 const partsHtml = s.parts.length              
-                    ? s.parts.map(p => `<span style="display:inline-block;box-sizing:border-box;padding:22px 26px;margin:0 12px 12px 0;border-radius:14px;background:rgba(249,115,22,0.15);border:2px solid rgba(249,115,22,0.25);vertical-align:top;overflow:visible;"><span style="display:inline-block;color:#fb923c;font-size:32px;font-weight:800;line-height:1;white-space:nowrap;transform:translateY(-14px);">${p}</span></span>`).join('')              
+                    ? s.parts.map(p => `<span style="display:inline-block;box-sizing:border-box;padding:18px 24px;margin:0 12px 10px 0;border-radius:14px;background:rgba(249,115,22,0.15);border:2px solid rgba(249,115,22,0.25);vertical-align:top;overflow:visible;"><span style="display:inline-block;color:#fb923c;font-size:30px;font-weight:800;line-height:1;white-space:nowrap;transform:translateY(-12px);">${p}</span></span>`).join('')              
                     : '<span style="color:#64748b;font-size:28px;">--</span>';              
 
                 const menuRows = shown.map(it => {              
                     const right = it.weight > 0              
-                        ? `<span style="color:#fb923c;">${it.weight}</span><span style="color:#94a3b8;font-size:26px;">kg</span> <span style="color:#475569;">×</span> ${it.reps}<span style="color:#94a3b8;font-size:26px;">回</span> <span style="color:#475569;">×</span> ${it.setCount}<span style="color:#94a3b8;font-size:26px;">セット</span>`              
-                        : `${it.reps}<span style="color:#94a3b8;font-size:26px;">回</span> <span style="color:#475569;">×</span> ${it.setCount}<span style="color:#94a3b8;font-size:26px;">セット</span>`;              
+                        ? `<span style="color:#fb923c;">${it.weight}</span><span style="color:#94a3b8;font-size:24px;">kg</span> <span style="color:#475569;">×</span> ${it.reps}<span style="color:#94a3b8;font-size:24px;">回</span> <span style="color:#475569;">×</span> ${it.setCount}<span style="color:#94a3b8;font-size:24px;">セット</span>`              
+                        : `${it.reps}<span style="color:#94a3b8;font-size:24px;">回</span> <span style="color:#475569;">×</span> ${it.setCount}<span style="color:#94a3b8;font-size:24px;">セット</span>`;              
                     // 長い種目名はJS側で切り詰め(html2canvasのoverflowクリップに頼らない=下端が切れない)
                     const dispName = it.name.length > 14 ? it.name.slice(0, 13) + '…' : it.name;              
-                    return `<div style="display:flex;justify-content:space-between;align-items:center;gap:20px;padding:16px 0;border-bottom:1px solid rgba(51,65,85,0.4);">
-                        <span style="font-size:34px;font-weight:800;color:#f1f5f9;white-space:nowrap;flex-shrink:0;">${dispName}</span>
-                        <span style="font-size:30px;font-weight:700;color:#cbd5e1;font-family:'SF Mono',ui-monospace,monospace;white-space:nowrap;">${right}</span>
+                    return `<div style="display:flex;justify-content:space-between;align-items:center;gap:20px;padding:11px 0;border-bottom:1px solid rgba(51,65,85,0.4);">
+                        <span style="font-size:32px;font-weight:800;color:#f1f5f9;white-space:nowrap;flex-shrink:0;">${dispName}</span>
+                        <span style="font-size:28px;font-weight:700;color:#cbd5e1;font-family:'SF Mono',ui-monospace,monospace;white-space:nowrap;">${right}</span>
                     </div>`;              
                 }).join('');              
 
@@ -1915,28 +1915,28 @@
                             <div style="width:17px;height:53px;background:rgba(249,115,22,0.28);border-radius:7px;"></div>
                         </div>
                     </div>
-                    <div style="display:flex;gap:0;margin-top:56px;border-top:1px solid rgba(51,65,85,0.5);border-bottom:1px solid rgba(51,65,85,0.5);">
-                        <div style="flex:1;text-align:center;padding:40px 10px;">
-                            <div style="font-size:72px;font-weight:900;color:#fff;line-height:1.2;padding:4px 0;">${timeLabel}</div>
-                            <div style="font-size:28px;color:#94a3b8;font-weight:700;margin-top:16px;">トレーニング時間</div>
+                    <div style="display:flex;gap:0;margin-top:44px;border-top:1px solid rgba(51,65,85,0.5);border-bottom:1px solid rgba(51,65,85,0.5);">
+                        <div style="flex:1;text-align:center;padding:32px 10px;">
+                            <div style="font-size:68px;font-weight:900;color:#fff;line-height:1.2;padding:4px 0;">${timeLabel}</div>
+                            <div style="font-size:26px;color:#94a3b8;font-weight:700;margin-top:12px;">トレーニング時間</div>
                         </div>
                         <div style="width:1px;background:rgba(51,65,85,0.5);"></div>
-                        <div style="flex:1;text-align:center;padding:40px 10px;">
-                            <div style="font-size:72px;font-weight:900;color:#fff;line-height:1.2;padding:4px 0;">${s.volume.toLocaleString()}<span style="font-size:34px;color:#94a3b8;">kg</span></div>
-                            <div style="font-size:28px;color:#94a3b8;font-weight:700;margin-top:16px;">総ボリューム</div>
+                        <div style="flex:1;text-align:center;padding:32px 10px;">
+                            <div style="font-size:68px;font-weight:900;color:#fff;line-height:1.2;padding:4px 0;">${s.volume.toLocaleString()}<span style="font-size:32px;color:#94a3b8;">kg</span></div>
+                            <div style="font-size:26px;color:#94a3b8;font-weight:700;margin-top:12px;">総ボリューム</div>
                         </div>
                         <div style="width:1px;background:rgba(51,65,85,0.5);"></div>
-                        <div style="flex:1;text-align:center;padding:40px 10px;">
-                            <div style="font-size:72px;font-weight:900;color:#fff;line-height:1.2;padding:4px 0;">${s.sets}<span style="font-size:34px;color:#94a3b8;">set</span></div>
-                            <div style="font-size:28px;color:#94a3b8;font-weight:700;margin-top:16px;">総セット数</div>
+                        <div style="flex:1;text-align:center;padding:32px 10px;">
+                            <div style="font-size:68px;font-weight:900;color:#fff;line-height:1.2;padding:4px 0;">${s.sets}<span style="font-size:32px;color:#94a3b8;">set</span></div>
+                            <div style="font-size:26px;color:#94a3b8;font-weight:700;margin-top:12px;">総セット数</div>
                         </div>
                     </div>
-                    <div style="margin-top:44px;">
-                        <div style="font-size:28px;font-weight:800;color:#94a3b8;margin-bottom:20px;">鍛えた部位</div>
+                    <div style="margin-top:36px;">
+                        <div style="font-size:26px;font-weight:800;color:#94a3b8;margin-bottom:16px;">鍛えた部位</div>
                         <div>${partsHtml}</div>
                     </div>
-                    <div style="margin-top:44px;flex:1;">
-                        <div style="font-size:28px;font-weight:800;color:#94a3b8;margin-bottom:8px;">本日のメニュー</div>
+                    <div style="margin-top:32px;flex:1;">
+                        <div style="font-size:26px;font-weight:800;color:#94a3b8;margin-bottom:6px;">本日のメニュー</div>
                         ${menuRows}
                         ${restHtml}
                     </div>
