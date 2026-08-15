@@ -1182,11 +1182,12 @@
                     // メニュー表示用の代表値(最頻出の重量×回数、セット数)
                     items.push(this.summarizeExercise(ex, master));              
                 });              
-                // YouTube種目: 重量/回数/セット数の代わりに動画タイトルを表示欄に入れる。部位が設定されていれば集計に含める
+                // YouTube種目: 「本日のメニュー」欄は左に部位名(未設定なら「その他」)、右に動画タイトルを表示
                 youtube.forEach(ex => {              
                     const master = this.masterExercises.find(m => m.name === ex.name && m.type === 'youtube');              
-                    if (master && master.part && !parts.includes(master.part)) parts.push(master.part);              
-                    items.push({ name: ex.name, detail: ex.name, isYoutube: true, weight: 0, reps: 0, setCount: 0 });              
+                    const exPart = master && master.part ? master.part : '';              
+                    if (exPart && !parts.includes(exPart)) parts.push(exPart);              
+                    items.push({ name: exPart || 'その他', detail: ex.name, isYoutube: true, part: exPart, weight: 0, reps: 0, setCount: 0 });              
                 });              
                 const activeSeconds = this.getDisplaySeconds(dateStr);              
                 return {              
@@ -2611,6 +2612,11 @@
             switchView(viewName) {              
                 WorkoutManager.flushSave();              
                 WorkoutManager.resetActivityClock();              
+                // 離れる画面のスクロール位置を保存(特に記録画面: 戻ってきた時に位置を復元するため)
+                if (this.state.currentView) {              
+                    this._scrollPositions = this._scrollPositions || {};              
+                    this._scrollPositions[this.state.currentView] = window.scrollY;              
+                }              
                 this.state.currentView = viewName;              
                 ['calendar', 'workout', 'timer', 'analytics', 'settings'].forEach(v => {              
                     const section = document.getElementById(`view-${v}`);              
@@ -2626,7 +2632,9 @@
                 if (viewName === 'workout') WorkoutManager.renderWorkoutView();              
                 if (viewName === 'calendar') CalendarManager.renderCalendar();              
                 if (viewName === 'analytics') StatisticsManager.renderChart();              
-                window.scrollTo(0, 0);              
+                // 記録画面は前回のスクロール位置を復元。それ以外は先頭に戻す。
+                const savedY = (this._scrollPositions && viewName === 'workout') ? this._scrollPositions[viewName] : 0;              
+                requestAnimationFrame(() => window.scrollTo(0, savedY || 0));              
             },              
             toggleModal(modalName) {              
                 const modal = document.getElementById(`modal-${modalName}`);              
@@ -2661,6 +2669,8 @@
                 document.getElementById('active-target-label').textContent = `${ex.name} - SET ${setIdx + 1}`;              
                 document.getElementById('val-weight').textContent = set.weight;              
                 document.getElementById('val-reps').textContent = set.reps;              
+                // このセルへの最初の数字入力で、既存値を消してから入力を始める(継ぎ足しを防ぐ)
+                this.state.pendingFreshInput = true;              
               
                 document.getElementById('numpad-container').classList.remove('hidden');              
                 // 差分更新: 直前にアクティブだったカードのハイライトを消し、新カードを更新              
@@ -2702,8 +2712,10 @@
               
                 if (key === 'C') {              
                     val = '0';              
+                    this.state.pendingFreshInput = false;              
                 } else if (key === 'backspace') {              
                     val = val.length > 1 ? val.slice(0, -1) : '0';              
+                    this.state.pendingFreshInput = false;              
                 } else if (key === '+2.5' || key === '-2.5') {              
                     if (targetKey === 'weight') {              
                         let num = parseFloat(val) || 0;              
@@ -2711,13 +2723,18 @@
                         if (num < 0) num = 0;              
                         val = String(Math.round(num * 10) / 10);              
                     }              
+                    this.state.pendingFreshInput = false;              
                 } else {              
-                    if (val === '0' && key !== '.') {              
+                    // このセルへの最初の数字入力なら、既存値を消してから入力を始める(継ぎ足しを防ぐ)
+                    if (this.state.pendingFreshInput) {              
+                        val = (key === '.') ? '0.' : key;              
+                    } else if (val === '0' && key !== '.') {              
                         val = key;              
                     } else {              
                         if (key === '.' && val.includes('.')) return;              
                         val += key;              
                     }              
+                    this.state.pendingFreshInput = false;              
                 }              
               
                 set[targetKey] = val;              
