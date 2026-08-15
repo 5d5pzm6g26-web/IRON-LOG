@@ -485,6 +485,15 @@
                 <!-- YouTube種目フォーム -->              
                 <div id="form-add-youtube" class="space-y-2 hidden">              
                     <input type="text" id="new-yt-url" placeholder="YouTube動画 URL (例: https://youtu.be/...)" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">              
+                    <select id="new-yt-part" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">              
+                        <option value="">部位（任意）</option>              
+                        <option value="胸">胸</option>              
+                        <option value="背中">背中</option>              
+                        <option value="脚">脚</option>              
+                        <option value="肩">肩</option>              
+                        <option value="腕">腕</option>              
+                        <option value="腹筋">腹筋</option>              
+                    </select>              
                     <button onclick="SettingsManager.addNewExercise('youtube')" class="w-full bg-rose-600 hover:bg-rose-700 text-white font-bold py-2 rounded-xl text-xs shadow-md transition">              
                         + YouTube種目を追加登録              
                     </button>              
@@ -1119,6 +1128,7 @@
             calculateDailySummary(dateStr) {              
                 const dayLogs = this.getLogsForDate(dateStr);              
                 const normal = dayLogs.filter(ex => ex.type === 'normal' && ex.sets);              
+                const youtube = dayLogs.filter(ex => ex.type === 'youtube');              
                 let volume = 0, sets = 0;              
                 const parts = [];              
                 const items = [];              
@@ -1133,6 +1143,12 @@
                     // メニュー表示用の代表値(最頻出の重量×回数、セット数)
                     items.push(this.summarizeExercise(ex, master));              
                 });              
+                // YouTube種目: 重量/回数/セット数の代わりに動画タイトルを表示欄に入れる。部位が設定されていれば集計に含める
+                youtube.forEach(ex => {              
+                    const master = this.masterExercises.find(m => m.name === ex.name && m.type === 'youtube');              
+                    if (master && master.part && !parts.includes(master.part)) parts.push(master.part);              
+                    items.push({ name: ex.name, detail: ex.name, isYoutube: true, weight: 0, reps: 0, setCount: 0 });              
+                });              
                 const activeSeconds = this.getDisplaySeconds(dateStr);              
                 return {              
                     volume: Math.round(volume * 10) / 10,              
@@ -1141,7 +1157,7 @@
                     items,              
                     activeSeconds,              
                     isManualTime: this.isManualTime(dateStr),              
-                    exerciseCount: normal.length              
+                    exerciseCount: normal.length + youtube.length              
                 };              
             },              
             // 1種目を「80kg × 8回 × 3セット」形式に要約(自重種目も実効重量kgを表示)
@@ -1884,10 +1900,19 @@
                     : '<span style="color:#64748b;font-size:28px;">--</span>';              
 
                 const menuRows = shown.map(it => {              
+                    // 長い種目名はJS側で切り詰め(html2canvasのoverflowクリップに頼らない=下端が切れない)
+                    if (it.isYoutube) {              
+                        // YouTube種目: 左に種目名、右に動画タイトル。両方切り詰めて左右バランスを取る
+                        const dispName = it.name.length > 10 ? it.name.slice(0, 9) + '…' : it.name;              
+                        const dispTitle = it.detail.length > 16 ? it.detail.slice(0, 15) + '…' : it.detail;              
+                        return `<div style="display:flex;justify-content:space-between;align-items:center;gap:20px;padding:16px 0;border-bottom:1px solid rgba(51,65,85,0.4);">
+                            <span style="font-size:34px;font-weight:800;color:#f1f5f9;white-space:nowrap;flex-shrink:0;">${dispName}</span>
+                            <span style="font-size:26px;font-weight:700;color:#94a3b8;white-space:nowrap;overflow:hidden;">${dispTitle}</span>
+                        </div>`;              
+                    }              
                     const right = it.weight > 0              
                         ? `<span style="color:#fb923c;">${it.weight}</span><span style="color:#94a3b8;font-size:26px;">kg</span> <span style="color:#475569;">×</span> ${it.reps}<span style="color:#94a3b8;font-size:26px;">回</span> <span style="color:#475569;">×</span> ${it.setCount}<span style="color:#94a3b8;font-size:26px;">セット</span>`              
                         : `${it.reps}<span style="color:#94a3b8;font-size:26px;">回</span> <span style="color:#475569;">×</span> ${it.setCount}<span style="color:#94a3b8;font-size:26px;">セット</span>`;              
-                    // 長い種目名はJS側で切り詰め(html2canvasのoverflowクリップに頼らない=下端が切れない)
                     const dispName = it.name.length > 14 ? it.name.slice(0, 13) + '…' : it.name;              
                     return `<div style="display:flex;justify-content:space-between;align-items:center;gap:20px;padding:16px 0;border-bottom:1px solid rgba(51,65,85,0.4);">
                         <span style="font-size:34px;font-weight:800;color:#f1f5f9;white-space:nowrap;flex-shrink:0;">${dispName}</span>
@@ -2398,6 +2423,7 @@
                         alert('有効なYouTube URLを入力してください');              
                         return;              
                     }              
+                    const part = document.getElementById('new-yt-part').value; // 任意              
                     Utility.fetchYouTubeTitle(url).then(title => {              
                         WorkoutManager.masterExercises.push({              
                             id: 'yt_' + Date.now(),              
@@ -2405,10 +2431,12 @@
                             name: title,              
                             url: url,              
                             videoId: videoId,              
+                            part: part || undefined,              
                             thumbnail: `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`              
                         });              
                         DataManager.saveData(DataManager.KEYS.MASTER_EXERCISES, WorkoutManager.masterExercises);              
                         document.getElementById('new-yt-url').value = '';              
+                        document.getElementById('new-yt-part').value = '';              
                         Utility.showToast('YouTube種目を追加しました');              
                     });              
                 }              
