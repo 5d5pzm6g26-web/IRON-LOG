@@ -72,6 +72,40 @@
             /* タブバー本体の高さ + セーフエリア分だけ本文の下余白を確保（誤タップ防止） */
             padding-bottom: calc(6rem + env(safe-area-inset-bottom, 0px));              
         }              
+        /* 画面を横向きにした時、タイマー画面を開いていればタイマーだけを全画面表示する。
+           どのタブを見ていても、縦向きに戻せば元のタブ表示に戻る。設定でオフにできる。 */
+        @media (orientation: landscape) {              
+            body.landscape-timer-showing .app-header,              
+            body.landscape-timer-showing .app-tabbar,              
+            body.landscape-timer-showing main > section:not(#view-timer),              
+            body.landscape-timer-showing .timer-settings-panel {              
+                display: none !important;              
+            }              
+            body.landscape-timer-showing {              
+                padding-bottom: 0;              
+            }              
+            body.landscape-timer-showing main {              
+                max-width: 100%;              
+                padding: 0;              
+                margin: 0;              
+                height: 100vh;              
+                display: flex;              
+                align-items: center;              
+                justify-content: center;              
+            }              
+            body.landscape-timer-showing #view-timer {              
+                width: 100%;              
+                max-width: 640px;              
+                padding: 0 2rem;              
+            }              
+            body.landscape-timer-showing #timer-main-card {              
+                padding: 2rem;              
+            }              
+            body.landscape-timer-showing #timer-standalone-display {              
+                font-size: 6.5rem;              
+                line-height: 1;              
+            }              
+        }              
     </style>              
 </head>              
 <body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col justify-between select-none antialiased">              
@@ -88,7 +122,7 @@
             </div>              
         </div>              
         <!-- Active Timer Badge -->              
-        <div id="timer-badge" onclick="UIManager.switchView('timer')" class="hidden cursor-pointer items-center bg-amber-500/10 border border-amber-500/30 text-amber-400 px-4 py-2 rounded-2xl font-mono font-black animate-pulse hover:bg-amber-500/20 transition">              
+        <div id="timer-badge" onclick="UIManager.switchView('timer')" class="hidden cursor-pointer items-center border px-4 py-2 rounded-2xl font-mono font-black animate-pulse transition">              
             <i class="fa-solid fa-stopwatch mr-2 text-amber-400 text-lg"></i>              
             <span id="timer-display" class="text-2xl tracking-wider">01:30</span>              
         </div>              
@@ -306,7 +340,7 @@
               
         <!-- VIEW 3: TIMER -->              
         <section id="view-timer" class="hidden space-y-4">              
-            <div class="bg-slate-800 p-5 rounded-2xl border border-slate-700/80 shadow-lg text-center space-y-4">              
+            <div id="timer-main-card" class="bg-slate-800 p-5 rounded-2xl border-2 border-slate-700/80 shadow-lg text-center space-y-4 transition-colors duration-300">              
                 <div class="flex justify-between items-center">              
                     <div class="flex items-center gap-2 text-amber-400 font-bold text-xs">              
                         <i class="fa-solid fa-stopwatch text-base"></i> 連続インターバルタイマー              
@@ -320,12 +354,12 @@
                     <div>SET: <span id="timer-current-set" class="text-brand-400 text-sm">1</span> / <span id="timer-total-sets" class="text-slate-400">4</span></div>              
                 </div>              
                                   
-                <div id="timer-standalone-display" class="text-6xl font-black font-mono text-white tracking-wider my-2">              
+                <div id="timer-standalone-display" class="text-6xl font-black font-mono text-white tracking-wider my-2 transition-colors duration-300">              
                     00:30              
                 </div>              
               
                 <div class="w-full bg-slate-900 rounded-full h-2 overflow-hidden">              
-                    <div id="timer-standalone-progress" class="bg-gradient-to-r from-amber-500 to-brand-500 h-full w-full transition-all duration-1000"></div>              
+                    <div id="timer-standalone-progress" class="bg-slate-600 h-full w-full transition-all duration-1000"></div>              
                 </div>              
               
                 <div class="flex justify-center gap-3 pt-2">              
@@ -339,7 +373,7 @@
             </div>              
               
             <!-- Custom Timer Settings Card -->              
-            <div class="bg-slate-800 p-4 rounded-2xl border border-slate-700 space-y-3">              
+            <div class="timer-settings-panel bg-slate-800 p-4 rounded-2xl border border-slate-700 space-y-3">              
                 <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">              
                     <i class="fa-solid fa-sliders text-brand-400"></i> タイマー設定              
                 </h3>              
@@ -367,7 +401,7 @@
             </div>              
               
             <!-- Custom Saved Presets Section -->              
-            <div class="bg-slate-800 p-4 rounded-2xl border border-slate-700 space-y-2">              
+            <div class="timer-settings-panel bg-slate-800 p-4 rounded-2xl border border-slate-700 space-y-2">              
                 <h3 class="text-xs font-bold text-slate-400 uppercase">保存済みマイプリセット</h3>              
                 <div id="timer-custom-presets-list" class="space-y-2"></div>              
             </div>              
@@ -413,6 +447,48 @@
         <!-- VIEW 5: SETTINGS -->              
         <section id="view-settings" class="hidden space-y-4">              
             <h2 class="text-lg font-bold text-white">設定 & 身体データ</h2>              
+              
+            <!-- Timer Sound Settings -->              
+            <div class="bg-slate-800 p-4 rounded-2xl border border-slate-700 space-y-3">              
+                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">              
+                    <i class="fa-solid fa-volume-high text-brand-400"></i> タイマー音の設定              
+                </h3>              
+                <div class="grid grid-cols-2 gap-2">              
+                    <div>              
+                        <label class="text-[10px] text-slate-500 font-bold block mb-1">音の種類</label>              
+                        <select id="timer-sound-type" onchange="TimerManager.setSoundType(this.value)" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-2 text-xs text-white">              
+                            <option value="sine">ピー（やわらかい）</option>              
+                            <option value="square">ブザー（はっきり）</option>              
+                            <option value="triangle">電子音（丸め）</option>              
+                            <option value="sawtooth">アラーム（鋭い）</option>              
+                        </select>              
+                    </div>              
+                    <div>              
+                        <label class="text-[10px] text-slate-500 font-bold block mb-1">音量</label>              
+                        <div class="flex items-center gap-2 h-[34px]">              
+                            <i class="fa-solid fa-volume-low text-slate-500 text-[10px]"></i>              
+                            <input id="timer-sound-volume" type="range" min="0" max="100" value="15" oninput="TimerManager.setSoundVolume(this.value/100)" onchange="TimerManager.previewSound()" class="flex-1 accent-brand-500">              
+                            <i class="fa-solid fa-volume-high text-slate-500 text-[10px]"></i>              
+                        </div>              
+                    </div>              
+                </div>              
+                <button onclick="TimerManager.previewSound()" class="w-full py-2 bg-slate-700/60 hover:bg-slate-700 text-slate-200 font-bold rounded-xl text-[11px] transition flex items-center justify-center gap-1.5">              
+                    <i class="fa-solid fa-play text-[10px]"></i> 音を試聴              
+                </button>              
+            </div>              
+              
+            <!-- Landscape Auto Timer Setting -->              
+            <div class="bg-slate-800 p-4 rounded-2xl border border-slate-700 space-y-1">              
+                <div class="flex justify-between items-center">              
+                    <div>              
+                        <h3 class="text-xs font-bold text-slate-200">横向きで全画面タイマー表示</h3>              
+                        <p class="text-[10px] text-slate-500 mt-0.5">どの画面を見ていても、端末を横向きにするとタイマーだけを大きく表示します</p>              
+                    </div>              
+                    <button id="landscape-timer-toggle" onclick="TimerManager.toggleLandscapeSetting()" class="shrink-0 ml-3 w-12 h-7 rounded-full bg-brand-500 relative transition-colors duration-200">              
+                        <span id="landscape-timer-toggle-knob" class="absolute top-1 left-1 w-5 h-5 rounded-full bg-white shadow-md transition-transform duration-200 translate-x-5"></span>              
+                    </button>              
+                </div>              
+            </div>              
               
             <div class="bg-slate-800 p-4 rounded-2xl border border-slate-700 space-y-3">              
                 <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider">身体データ管理（自重換算に使用）</h3>              
@@ -803,6 +879,8 @@
                 WORKOUT_MEMOS: 'ironlog_workout_memos',              
                 COMPLETED_DATES: 'ironlog_completed_dates',              
                 TIMER_PRESETS: 'ironlog_timer_presets',              
+                TIMER_SOUND_SETTINGS: 'ironlog_timer_sound_settings',              
+                TIMER_LANDSCAPE_ENABLED: 'ironlog_timer_landscape_enabled',              
                 USER_PROFILE: 'ironlog_user_profile',              
                 GOALS: 'ironlog_goals',  
                 BODY_HISTORY: 'ironlog_body_history', // 修正4：身体データ履歴用キー追加  
@@ -2108,6 +2186,9 @@
               
         const TimerManager = {              
             presets: [],              
+            soundSettings: { type: 'sine', volume: 0.15 },              
+            landscapeEnabled: true,              
+            _preLandscapeView: null,              
             state: {              
                 workSec: 30,              
                 restSec: 15,              
@@ -2121,9 +2202,63 @@
             },              
             init() {              
                 this.presets = DataManager.loadData(DataManager.KEYS.TIMER_PRESETS, DataManager.DEFAULT_PRESETS);              
+                this.soundSettings = DataManager.loadData(DataManager.KEYS.TIMER_SOUND_SETTINGS, { type: 'sine', volume: 0.15 });              
+                this.landscapeEnabled = DataManager.loadData(DataManager.KEYS.TIMER_LANDSCAPE_ENABLED, true);              
                 this.renderPresets();              
+                this.syncSoundControls();              
+                this.syncLandscapeToggle();              
+                this.setupLandscapeWatcher();              
             },              
-            playBeep(freq = 800, duration = 0.1, type = 'sine') {              
+            // 設定: 横向き時の全画面タイマー表示のオン/オフを切り替える              
+            toggleLandscapeSetting() {              
+                this.landscapeEnabled = !this.landscapeEnabled;              
+                DataManager.saveData(DataManager.KEYS.TIMER_LANDSCAPE_ENABLED, this.landscapeEnabled);              
+                this.syncLandscapeToggle();              
+                // オフにした瞬間、もし横向き表示中なら通常表示に戻す              
+                if (!this.landscapeEnabled) this.applyOrientation();              
+            },              
+            syncLandscapeToggle() {              
+                const btn = document.getElementById('landscape-timer-toggle');              
+                const knob = document.getElementById('landscape-timer-toggle-knob');              
+                if (!btn || !knob) return;              
+                if (this.landscapeEnabled) {              
+                    btn.className = 'shrink-0 ml-3 w-12 h-7 rounded-full bg-brand-500 relative transition-colors duration-200';              
+                    knob.className = 'absolute top-1 left-1 w-5 h-5 rounded-full bg-white shadow-md transition-transform duration-200 translate-x-5';              
+                } else {              
+                    btn.className = 'shrink-0 ml-3 w-12 h-7 rounded-full bg-slate-600 relative transition-colors duration-200';              
+                    knob.className = 'absolute top-1 left-1 w-5 h-5 rounded-full bg-white shadow-md transition-transform duration-200 translate-x-0';              
+                }              
+            },              
+            // どのタブを見ていても、横向きにしたらタイマーだけを全画面表示する。縦に戻したら元のタブへ戻す。              
+            setupLandscapeWatcher() {              
+                const check = () => this.applyOrientation();              
+                window.addEventListener('resize', check);              
+                window.addEventListener('orientationchange', check);              
+                check();              
+            },              
+            applyOrientation() {              
+                const isLandscape = window.matchMedia('(orientation: landscape)').matches;              
+                const body = document.body;              
+                if (isLandscape && this.landscapeEnabled) {              
+                    if (!body.classList.contains('landscape-timer-showing')) {              
+                        // 初めて横向きになった時だけ、元のタブを覚えておく              
+                        this._preLandscapeView = UIManager.state.currentView;              
+                        body.classList.add('landscape-timer-showing');              
+                    }              
+                    // 横向き表示中は常にタイマービューを前面に出す(switchView等で隠されても上書きする)              
+                    document.getElementById('view-timer').classList.remove('hidden');              
+                } else {              
+                    if (body.classList.contains('landscape-timer-showing')) {              
+                        body.classList.remove('landscape-timer-showing');              
+                        // 元々見ていたタブの表示状態に戻す(タイマータブ以外を見ていた場合は隠す)              
+                        if (this._preLandscapeView && this._preLandscapeView !== 'timer') {              
+                            document.getElementById('view-timer').classList.add('hidden');              
+                        }              
+                        this._preLandscapeView = null;              
+                    }              
+                }              
+            },              
+            playBeep(freq = 800, duration = 0.1, type = null) {              
                 try {              
                     const AudioCtx = window.AudioContext || window.webkitAudioContext;              
                     if (!AudioCtx) return;              
@@ -2131,9 +2266,9 @@
                     if (UIManager.state.audioCtx.state === 'suspended') UIManager.state.audioCtx.resume();              
                     const osc = UIManager.state.audioCtx.createOscillator();              
                     const gain = UIManager.state.audioCtx.createGain();              
-                    osc.type = type;              
+                    osc.type = type || this.soundSettings.type || 'sine';              
                     osc.frequency.setValueAtTime(freq, UIManager.state.audioCtx.currentTime);              
-                    gain.gain.setValueAtTime(0.15, UIManager.state.audioCtx.currentTime);              
+                    gain.gain.setValueAtTime(this.soundSettings.volume ?? 0.15, UIManager.state.audioCtx.currentTime);              
                     osc.connect(gain);              
                     gain.connect(UIManager.state.audioCtx.destination);              
                     osc.start();              
@@ -2141,6 +2276,27 @@
                 } catch (e) {              
                     console.log('Audio error:', e);              
                 }              
+            },              
+            // 音の種類・音量の設定を保存し、UIに反映              
+            setSoundType(type) {              
+                this.soundSettings.type = type;              
+                DataManager.saveData(DataManager.KEYS.TIMER_SOUND_SETTINGS, this.soundSettings);              
+                this.syncSoundControls();              
+                this.playBeep(1000, 0.15); // プレビュー再生              
+            },              
+            setSoundVolume(value) {              
+                const v = Math.max(0, Math.min(1, parseFloat(value) || 0));              
+                this.soundSettings.volume = v;              
+                DataManager.saveData(DataManager.KEYS.TIMER_SOUND_SETTINGS, this.soundSettings);              
+            },              
+            previewSound() {              
+                this.playBeep(1000, 0.2);              
+            },              
+            syncSoundControls() {              
+                const typeSelect = document.getElementById('timer-sound-type');              
+                const volumeSlider = document.getElementById('timer-sound-volume');              
+                if (typeSelect) typeSelect.value = this.soundSettings.type || 'sine';              
+                if (volumeSlider) volumeSlider.value = Math.round((this.soundSettings.volume ?? 0.15) * 100);              
             },              
             toggle() {              
                 if (this.state.active) {              
@@ -2231,15 +2387,38 @@
               
                 if (ui.phase !== this.state.phase) {              
                     const phaseBadge = document.getElementById('timer-phase-badge');              
+                    const bigDisplay = document.getElementById('timer-standalone-display');              
+                    const progressBar = document.getElementById('timer-standalone-progress');              
+                    const cardEl = document.getElementById('timer-main-card');              
+                    const headerBadge = document.getElementById('timer-badge');              
+                    const headerIcon = headerBadge ? headerBadge.querySelector('i') : null;              
+                    // ヘッダーの小さいタイマーバッジも運動中/休憩中で色を切替(表示/非表示のhiddenクラスは維持する)              
+                    const headerColorClasses = ['bg-brand-500/10','border-brand-500/30','text-brand-400','hover:bg-brand-500/20','bg-sky-500/10','border-sky-500/30','text-sky-400','hover:bg-sky-500/20','bg-amber-500/10','border-amber-500/30','text-amber-400','hover:bg-amber-500/20'];              
+                    if (headerBadge) headerBadge.classList.remove(...headerColorClasses);              
                     if (this.state.phase === 'WORK') {              
                         phaseBadge.textContent = '運動中';              
                         phaseBadge.className = 'px-2.5 py-0.5 rounded-full bg-brand-500 text-[10px] font-bold text-white';              
+                        if (bigDisplay) bigDisplay.className = 'text-6xl font-black font-mono text-brand-400 tracking-wider my-2 transition-colors duration-300';              
+                        if (progressBar) progressBar.className = 'bg-brand-500 h-full w-full transition-all duration-1000';              
+                        if (cardEl) cardEl.className = 'bg-slate-800 p-5 rounded-2xl border-2 border-brand-500/50 shadow-lg shadow-brand-500/10 text-center space-y-4 transition-colors duration-300';              
+                        if (headerBadge) headerBadge.classList.add('bg-brand-500/10','border-brand-500/30','text-brand-400','hover:bg-brand-500/20');              
+                        if (headerIcon) headerIcon.className = 'fa-solid fa-stopwatch mr-2 text-brand-400 text-lg';              
                     } else if (this.state.phase === 'REST') {              
                         phaseBadge.textContent = '休憩中';              
-                        phaseBadge.className = 'px-2.5 py-0.5 rounded-full bg-amber-500 text-[10px] font-bold text-white';              
+                        phaseBadge.className = 'px-2.5 py-0.5 rounded-full bg-sky-500 text-[10px] font-bold text-white';              
+                        if (bigDisplay) bigDisplay.className = 'text-6xl font-black font-mono text-sky-400 tracking-wider my-2 transition-colors duration-300';              
+                        if (progressBar) progressBar.className = 'bg-sky-500 h-full w-full transition-all duration-1000';              
+                        if (cardEl) cardEl.className = 'bg-slate-800 p-5 rounded-2xl border-2 border-sky-500/50 shadow-lg shadow-sky-500/10 text-center space-y-4 transition-colors duration-300';              
+                        if (headerBadge) headerBadge.classList.add('bg-sky-500/10','border-sky-500/30','text-sky-400','hover:bg-sky-500/20');              
+                        if (headerIcon) headerIcon.className = 'fa-solid fa-stopwatch mr-2 text-sky-400 text-lg';              
                     } else {              
                         phaseBadge.textContent = '完了';              
                         phaseBadge.className = 'px-2.5 py-0.5 rounded-full bg-emerald-500 text-[10px] font-bold text-white';              
+                        if (bigDisplay) bigDisplay.className = 'text-6xl font-black font-mono text-emerald-400 tracking-wider my-2 transition-colors duration-300';              
+                        if (progressBar) progressBar.className = 'bg-emerald-500 h-full w-full transition-all duration-1000';              
+                        if (cardEl) cardEl.className = 'bg-slate-800 p-5 rounded-2xl border-2 border-emerald-500/50 shadow-lg shadow-emerald-500/10 text-center space-y-4 transition-colors duration-300';              
+                        if (headerBadge) headerBadge.classList.add('bg-amber-500/10','border-amber-500/30','text-amber-400','hover:bg-amber-500/20');              
+                        if (headerIcon) headerIcon.className = 'fa-solid fa-stopwatch mr-2 text-amber-400 text-lg';              
                     }              
                     ui.phase = this.state.phase;              
                 }              
@@ -2674,6 +2853,8 @@
                 // 記録画面は前回のスクロール位置を復元。それ以外は先頭に戻す。
                 const savedY = (this._scrollPositions && viewName === 'workout') ? this._scrollPositions[viewName] : 0;              
                 requestAnimationFrame(() => window.scrollTo(0, savedY || 0));              
+                // 横向き全画面タイマー表示中なら、タブ切替後もその状態を優先する              
+                TimerManager.applyOrientation();              
             },              
             toggleModal(modalName) {              
                 const modal = document.getElementById(`modal-${modalName}`);              
