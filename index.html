@@ -88,9 +88,9 @@
             </div>              
         </div>              
         <!-- Active Timer Badge -->              
-        <div id="timer-badge" onclick="UIManager.switchView('timer')" class="hidden cursor-pointer items-center bg-amber-500/10 border border-amber-500/30 text-amber-400 px-3 py-1 rounded-full text-xs font-mono font-bold animate-pulse hover:bg-amber-500/20 transition">              
-            <i class="fa-solid fa-stopwatch mr-1.5 text-amber-400"></i>              
-            <span id="timer-display">01:30</span>              
+        <div id="timer-badge" onclick="UIManager.switchView('timer')" class="hidden cursor-pointer items-center bg-amber-500/10 border border-amber-500/30 text-amber-400 px-4 py-2 rounded-2xl font-mono font-black animate-pulse hover:bg-amber-500/20 transition">              
+            <i class="fa-solid fa-stopwatch mr-2 text-amber-400 text-lg"></i>              
+            <span id="timer-display" class="text-2xl tracking-wider">01:30</span>              
         </div>              
     </header>              
               
@@ -150,8 +150,8 @@
                     <div id="selected-date-display" class="text-base font-black text-white font-mono">2026-07-24</div>              
                     <div id="selected-date-status" class="text-xs text-slate-400 mt-0.5">記録なし</div>              
                 </div>              
-                <button onclick="CalendarManager.openSelectedDateWorkout()" class="bg-gradient-to-r from-brand-500 to-amber-500 hover:from-brand-600 hover:to-amber-600 active:scale-95 text-white font-bold px-4 py-3 rounded-xl shadow-lg shadow-brand-500/20 text-xs flex items-center gap-2 transition">              
-                    <i class="fa-solid fa-pen-to-square"></i> 記録を開く              
+                <button id="selected-date-action-btn" onclick="CalendarManager.openSelectedDateWorkout()" class="bg-gradient-to-r from-brand-500 to-amber-500 hover:from-brand-600 hover:to-amber-600 active:scale-95 text-white font-bold px-4 py-3 rounded-xl shadow-lg shadow-brand-500/20 text-xs flex items-center gap-2 transition">              
+                    <i class="fa-solid fa-dumbbell"></i> <span id="selected-date-action-label">トレーニングを始める</span>              
                 </button>              
             </div>              
               
@@ -1804,6 +1804,15 @@
                 if (isCompleted) statusEl.textContent = 'トレーニング完了';              
                 else if (hasLogs) statusEl.textContent = '記録中';              
                 else statusEl.textContent = '記録なし';              
+              
+                // 記録完了後は「トレーニングを始める」カードを隠し、サマリーと感想メモだけ見せる              
+                const dateCard = document.getElementById('selected-date-card');              
+                if (isCompleted) {              
+                    dateCard.classList.add('hidden');              
+                } else {              
+                    dateCard.classList.remove('hidden');              
+                    document.getElementById('selected-date-action-label').textContent = hasLogs ? '記録を続ける' : 'トレーニングを始める';              
+                }              
               
                 const memoCard = document.getElementById('selected-date-memo-card');              
                 const memoTextEl = document.getElementById('selected-date-memo-text');              
