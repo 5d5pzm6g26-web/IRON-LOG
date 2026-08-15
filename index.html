@@ -1871,7 +1871,7 @@
                 const rest = s.items.length - shown.length;              
 
                 const partsHtml = s.parts.length              
-                    ? s.parts.map(p => `<div style="display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;height:72px;min-width:80px;padding:0 24px;margin:0 12px 12px 0;border-radius:14px;background:rgba(249,115,22,0.15);border:2px solid rgba(249,115,22,0.25);vertical-align:top;"><span style="color:#fb923c;font-size:32px;font-weight:800;line-height:1;position:relative;top:-2px;">${p}</span></div>`).join('')              
+                    ? s.parts.map(p => `<span style="display:inline-block;box-sizing:border-box;padding:22px 26px;margin:0 12px 12px 0;border-radius:14px;background:rgba(249,115,22,0.15);border:2px solid rgba(249,115,22,0.25);color:#fb923c;font-size:32px;font-weight:800;line-height:1;vertical-align:top;">${p}</span>`).join('')              
                     : '<span style="color:#64748b;font-size:28px;">--</span>';              
 
                 const menuRows = shown.map(it => {              
@@ -1898,12 +1898,12 @@
                             <div style="font-size:30px;font-weight:800;color:#fb923c;letter-spacing:0.25em;">TRAINING SUMMARY</div>
                             <div style="font-size:64px;font-weight:900;color:#ffffff;margin-top:8px;line-height:1.3;padding:2px 0;">${dateLabel}</div>
                         </div>
-                        <div style="width:132px;height:88px;flex-shrink:0;display:flex;align-items:center;justify-content:flex-end;gap:6px;">
-                            <div style="width:14px;height:44px;background:rgba(249,115,22,0.28);border-radius:6px;"></div>
-                            <div style="width:18px;height:74px;background:rgba(249,115,22,0.28);border-radius:7px;"></div>
-                            <div style="width:34px;height:16px;background:rgba(249,115,22,0.28);"></div>
-                            <div style="width:18px;height:74px;background:rgba(249,115,22,0.28);border-radius:7px;"></div>
-                            <div style="width:14px;height:44px;background:rgba(249,115,22,0.28);border-radius:6px;"></div>
+                        <div style="width:160px;height:106px;flex-shrink:0;display:flex;align-items:center;justify-content:flex-end;gap:7px;">
+                            <div style="width:17px;height:53px;background:rgba(249,115,22,0.28);border-radius:7px;"></div>
+                            <div style="width:22px;height:89px;background:rgba(249,115,22,0.28);border-radius:8px;"></div>
+                            <div style="width:41px;height:19px;background:rgba(249,115,22,0.28);"></div>
+                            <div style="width:22px;height:89px;background:rgba(249,115,22,0.28);border-radius:8px;"></div>
+                            <div style="width:17px;height:53px;background:rgba(249,115,22,0.28);border-radius:7px;"></div>
                         </div>
                     </div>
                     <div style="display:flex;gap:0;margin-top:56px;border-top:1px solid rgba(51,65,85,0.5);border-bottom:1px solid rgba(51,65,85,0.5);">
