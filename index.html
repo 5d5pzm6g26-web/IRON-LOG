@@ -1184,14 +1184,27 @@
                         return;              
                     }              
                     if (!ex.sets || ex.sets.length === 0) return;              
-                    const master = this.masterExercises.find(m => m.name === ex.name);              
-                    const sum = this.summarizeExercise(ex, master);              
-                    // 「重量×回数×セット数」の1行にまとめる(例: 60kg×10回×3セット)
-                    const detail = sum.weight > 0              
-                        ? `${sum.weight}kg×${sum.reps}回×${sum.setCount}セット`              
-                        : `${sum.reps}回×${sum.setCount}セット`;              
                     lines.push(ex.name);              
-                    lines.push(detail);              
+                    // 重量×回数の組み合わせが同じセットをまとめ、出現順に1行ずつ出力              
+                    // (例: 60kg×10rep×2set の後に 50kg×10rep×1set のように、変化があれば行を分ける)
+                    const groups = [];              
+                    ex.sets.forEach(s => {              
+                        const w = parseFloat(s.weight) || 0;              
+                        const r = parseFloat(s.reps) || 0;              
+                        const last = groups[groups.length - 1];              
+                        if (last && last.weight === w && last.reps === r) {              
+                            last.count++;              
+                        } else {              
+                            groups.push({ weight: w, reps: r, count: 1 });              
+                        }              
+                    });              
+                    groups.forEach(g => {              
+                        if (g.weight > 0) {              
+                            lines.push(`${g.weight}kg×${g.reps}rep×${g.count}set`);              
+                        } else {              
+                            lines.push(`${g.reps}rep×${g.count}set`);              
+                        }              
+                    });              
                     lines.push('');              
                 });              
                 lines.push('#筋トレ #筋トレ記録 #IRONLOG');              
